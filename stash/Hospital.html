@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Emergency Notification</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f5e9;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Incoming Ambulance Notification</h1>
+    <div class="info" id="emergency-info">
+        <h2>Emergency Details</h2>
+        <p id="hospital-name"></p>
+        <p id="hospital-severity"></p>
+        <p id="hospital-emergency-type"></p>
+        <p id="hospital-eta"></p>
+    </div>
+</div>
+
+<script>
+    // Function to retrieve emergency information from the hospital's API
+    function fetchEmergencyInfo() {
+        const apiUrl = 'http://localhost:5000/emergency';  // Update with your server URL if not running locally
+
+        fetch(apiUrl)
+        .then(response => response.json())
+        .then(emergencyInfo => {
+            if (emergencyInfo) {
+                document.getElementById("hospital-name").textContent = `Hospital Name: ${emergencyInfo.hospitalName}`;
+                document.getElementById("hospital-severity").textContent = `Severity: ${emergencyInfo.severity}`;
+                document.getElementById("hospital-emergency-type").textContent = `Emergency Type: ${emergencyInfo.emergencyType}`;
+                document.getElementById("hospital-eta").textContent = `Estimated Time of Arrival: ${emergencyInfo.eta} minutes`;
+            } else {
+                alert("No emergency information available.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching emergency information:", error);
+        });
+    }
+
+    // Fetch and display emergency info when the page loads
+    window.onload = fetchEmergencyInfo;
+</script>
+
+</body>
+</html>

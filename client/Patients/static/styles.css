@@ -1,0 +1,146 @@
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #1c1c1c;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.container {
+  width: 100%;
+  max-width: 850px;
+  padding: 20px;
+  margin: 20px;
+  background-color: #333;
+  border-radius: 10px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+  text-align: center;
+  color: #fff;
+  margin-bottom: 20px;
+  font-size: 32px;
+}
+
+.form-group {
+  margin-bottom: 25px;
+}
+
+.label {
+  display: block;
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #ddd;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+button {
+  flex: 1;
+  padding: 12px 15px;
+  background-color: #004690;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button.submit-btn {
+  width: 100%;
+  background-color: #28a745;
+  color: white;
+  font-size: 18px;
+  padding: 12px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button.submit-btn:hover {
+  background-color: #208236;
+}
+
+button:hover {
+  background-color: #007bff;
+}
+
+button.active {
+  background-color: #007bff;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+button.low {
+  background-color: #007bff;
+}
+
+button.moderate {
+  background-color: #ffc107;
+}
+
+button.high {
+  background-color: #dc3545;
+}
+
+button.other {
+  background-color: #6c757d;
+}
+
+#map {
+  width: 100%;
+  height: 450px;
+  margin-top: 20px;
+  border-radius: 8px;
+  border: 2px solid #444;
+}
+
+.hospital-info {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #444;
+  border: 1px solid #555;
+  border-radius: 6px;
+  color: #fff;
+}
+
+.hospital-info h2 {
+  margin-bottom: 15px;
+  color: #fff;
+}
+
+.hospital-info p {
+  margin: 5px 0;
+  font-size: 15px;
+  color: #ddd;
+}
+
+@media (max-width: 768px) {
+  .button-group {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  button {
+    font-size: 14px;
+  }
+
+  #map {
+    height: 350px;
+  }
+}
