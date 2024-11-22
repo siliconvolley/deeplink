@@ -1,379 +1,322 @@
-var map = L.map("map").setView([51.505, -0.09], 13);
-
+// Initialize map
+var map = L.map("map").setView([12.885809, 74.841689], 13);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 18,
+    maxZoom: 18,
 }).addTo(map);
 
+// UI Selection Variables
 let selectedSeverity = null;
 let selectedEmergencyType = null;
 
+// Event Listeners for UI Buttons
 document.querySelectorAll(".severity-btn").forEach((btn) => {
-  btn.addEventListener("click", function () {
-    document
-      .querySelectorAll(".severity-btn")
-      .forEach((b) => b.classList.remove("active"));
-    this.classList.add("active");
-    selectedSeverity = this.getAttribute("data-severity");
-  });
+    btn.addEventListener("click", function () {
+        document.querySelectorAll(".severity-btn").forEach((b) => b.classList.remove("active"));
+        this.classList.add("active");
+        selectedSeverity = this.getAttribute("data-severity");
+    });
 });
 
 document.querySelectorAll(".emergency-btn").forEach((btn) => {
-  btn.addEventListener("click", function () {
-    document
-      .querySelectorAll(".emergency-btn")
-      .forEach((b) => b.classList.remove("active"));
-    this.classList.add("active");
-    selectedEmergencyType = this.getAttribute("data-emergency");
-  });
+    btn.addEventListener("click", function () {
+        document.querySelectorAll(".emergency-btn").forEach((b) => b.classList.remove("active"));
+        this.classList.add("active");
+        selectedEmergencyType = this.getAttribute("data-emergency");
+    });
 });
 
+// Traffic Light System
 class TrafficLight {
-  constructor(id, lat, lon, status, lights) {
-    this.id = id;
-    this.lat = lat;
-    this.lon = lon;
-    this.status = status;
-    this.lights = lights; // ["red", "yellow", "green"]
-  }
+    constructor(id, lat, lon, status) {
+        this.id = id;
+        this.lat = lat;
+        this.lon = lon;
+        this.status = status;
+        this.marker = null;
+    }
+
+    updateStatus(newStatus) {
+        this.status = newStatus;
+        this.updateMarker();
+    }
+
+    updateMarker() {
+        if (this.marker) {
+            map.removeLayer(this.marker);
+        }
+        const color = this.status === "GREEN" ? "green" : "red";
+        this.marker = L.marker([this.lat, this.lon], {
+            icon: L.divIcon({
+                className: 'traffic-light-icon',
+                html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid black;"></div>`
+            })
+        }).addTo(map);
+        this.marker.bindPopup(`Traffic Light ${this.id}: ${this.status}`);
+        console.log(`Traffic Light ${this.id}: ${this.status}`);
+    }
 }
 
-class Trigger {
-  constructor(id, lat, lon) {
-    this.id = id;
-    this.lat = lat;
-    this.lon = lon;
-    this.status = false;
-  }
-}
-
-const trafficLights = [
-  new TrafficLight(1, 12.885495, 74.838782, "RED", ["red", "yellow", "green"]),
-  new TrafficLight(2, 12.885514, 74.838943, "RED", ["red", "yellow", "green"]),
-  new TrafficLight(3, 12.885383, 74.838970, "RED", ["red", "yellow", "green"]),
-  new TrafficLight(4, 12.885419, 74.838777, "RED", ["red", "yellow", "green"]),
-  new TrafficLight(5, 12.885393, 74.838986, "RED", ["red", "yellow", "green"]),
-];
-
-const triggers = [
-  new Trigger(1, 12.885067, 74.838862),
-  new Trigger(2, 12.886133, 74.838792),
-  new Trigger(5, 12.885430, 74.839345),
-];
-
-
-
-
-
-// Key-value pairs mapping triggers to traffic lights
-const triggerTrafficLightMap = {
-  1: [1], // Trigger 1 activates Traffic Light 1
-  5: [5], // Trigger 5 activates Traffic Lights 4 and 5
-  2: [2], // Trigger 2 activates Traffic Lights 2 and 3
+// Initialize traffic lights
+const trafficLights = {
+    'A1': new TrafficLight('A1', 12.885495, 74.838782, "RED"),
+    'B1': new TrafficLight('B1', 12.885809, 74.838835, "RED"),
+    'C1': new TrafficLight('C1', 12.885393, 74.838986, "RED")
 };
 
-// Function to activate traffic lights based on a triggered trigger
-function activateTrafficLightsForTrigger(triggerId) {
-  console.log(`Trigger ${triggerId} activated.`);
+// Define trigger points
+const triggerPoints = {
+    'T1': {
+        id: 'T1',
+        lat: 12.885067,
+        lon: 74.838862,
+        controlsSignal: 'A1',
+        road: 'MG_ROAD',
+        direction: 'NORTH',
+        expectedHeading: 0
+    },
+    'T2': {
+        id: 'T2',
+        lat: 12.886133,
+        lon: 74.838792,
+        controlsSignal: 'B1',
+        road: 'MG_ROAD',
+        direction: 'SOUTH',
+        expectedHeading: 180
+    },
+    'T3': {
+        id: 'T3',
+        lat: 12.88543,
+        lon: 74.839345,
+        controlsSignal: 'C1',
+        road: 'BEJAI_ROAD',
+        direction: 'WEST',
+        expectedHeading: 270
+    }
+};
 
-  const trafficLightsToActivate = triggerTrafficLightMap[triggerId];
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
 
-  if (trafficLightsToActivate) {
-    trafficLightsToActivate.forEach((lightId) => {
-      const trafficLight = trafficLights.find((light) => light.id === lightId);
-      if (trafficLight) {
-        trafficLight.status = "GREEN";
-        console.log(`Traffic Light ${trafficLight.id} is now ${trafficLight.status}.`);
+function calculateHeading(point1, point2) {
+    const dLon = (point2.lng - point1.lng);
+    const y = Math.sin(dLon) * Math.cos(point2.lat);
+    const x = Math.cos(point1.lat) * Math.sin(point2.lat) -
+        Math.sin(point1.lat) * Math.cos(point2.lat) * Math.cos(dLon);
+    let heading = Math.atan2(y, x) * 180 / Math.PI;
+    heading = (heading + 360) % 360;
+    return heading;
+}
 
-        // Update the map marker to reflect the new status
-        L.marker([trafficLight.lat, trafficLight.lon])
-          .addTo(map)
-          .bindPopup(`Traffic Light ${trafficLight.id} is now GREEN!`)
-          .openPopup();
-      }
+function checkTriggerPoints(routeCoordinates) {
+    const TRIGGER_RADIUS = 0.01;
+    const processedTriggers = new Set();
+    
+    Object.values(trafficLights).forEach(light => light.updateStatus("RED"));
+    
+    let currentLocation = null;
+    
+    function moveAlongRoute(index) {
+        if (index >= routeCoordinates.length) return;
+        
+        currentLocation = routeCoordinates[index];
+        
+        if (index < routeCoordinates.length - 1) {
+            const nextPoint = routeCoordinates[index + 1];
+            const heading = calculateHeading(currentLocation, nextPoint);
+            
+            Object.values(triggerPoints).forEach(trigger => {
+                if (processedTriggers.has(trigger.id)) return;
+                
+                const distance = haversine(
+                    currentLocation.lat,
+                    currentLocation.lng,
+                    trigger.lat,
+                    trigger.lon
+                );
+                
+                if (distance <= TRIGGER_RADIUS) {
+                    const headingDiff = Math.abs(heading - trigger.expectedHeading);
+                    const isCorrectDirection = headingDiff <= 45 || headingDiff >= 315;
+                    
+                    if (trigger.controlsSignal === 'C1') {
+                        if (heading > 225 && heading < 315) {
+                            trafficLights[trigger.controlsSignal].updateStatus("GREEN");
+                            processedTriggers.add(trigger.id);
+                        }
+                    } else if (isCorrectDirection) {
+                        trafficLights[trigger.controlsSignal].updateStatus("GREEN");
+                        processedTriggers.add(trigger.id);
+                    }
+                }
+            });
+            
+            setTimeout(() => moveAlongRoute(index + 1), 1000);
+        }
+    }
+    
+    moveAlongRoute(0);
+}
+
+function addTriggerMarkers() {
+    Object.values(triggerPoints).forEach(trigger => {
+        L.marker([trigger.lat, trigger.lon], {
+            icon: L.divIcon({
+                className: 'trigger-icon',
+                html: `<div style="background-color: yellow; width: 15px; height: 15px; border-radius: 50%; border: 2px solid black;"></div>`
+            })
+        })
+        .addTo(map)
+        .bindPopup(`Trigger ${trigger.id} (${trigger.direction})`);
     });
-  } else {
-    console.log(`No traffic lights associated with Trigger ${triggerId}.`);
-  }
-}
-
-
-
-
-
-
-function addMarkers(map, trafficLights) {
-  trafficLights.forEach((light) => {
-    L.marker([light.lat, light.lon])
-      .addTo(map)
-      .bindPopup(`Traffic Light ${light.id}`)
-      .openPopup();
-    // console.log(`DEBUG: Added traffic light at ${light.lat}, ${light.lon}`);
-  });
-}
-
-function addTriggers(map, triggers) {
-  triggers.forEach((trigger) => {
-    const marker = L.marker([trigger.lat, trigger.lon])
-      .addTo(map)
-      .bindPopup(`Trigger ${trigger.id}`)
-      .openPopup();
-    // console.log(`DEBUG: Added trigger at ${trigger.lat}, ${trigger.lon}`);
-  });
-}
-
-
-function getLocation() {
-  // ! replace with your current location in future
-  // const lat = 12.884392; // facing light 1
-  // const lon = 74.839044;
-  const lat = 12.885809; // facing light 5
-  const lon = 74.841689;
-
-  map.setView([lat, lon], 13);
-
-  L.marker([lat, lon]).addTo(map).bindPopup("You are here.").openPopup();
-
-  addMarkers(map, trafficLights);
-  addTriggers(map, triggers);
-  findNearestHospital(lat, lon);
 }
 
 function findNearestHospital(lat, lon) {
-  const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];node[amenity=hospital](around:5000,${lat},${lon});out;`;
+    const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];node[amenity=hospital](around:5000,${lat},${lon});out;`;
+    
+    fetch(overpassUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.elements.length > 0) {
+                let nearestHospital = null;
+                let minDistance = Infinity;
+                
+                data.elements.forEach(hospital => {
+                    const distance = haversine(lat, lon, hospital.lat, hospital.lon);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestHospital = {
+                            lat: hospital.lat,
+                            lon: hospital.lon,
+                            name: hospital.tags.name || "Unnamed Hospital"
+                        };
+                    }
+                });
+                
+                showRoute(lat, lon, nearestHospital.lat, nearestHospital.lon, nearestHospital.name);
+            } else {
+                alert("No hospitals found within 5km");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+}
 
-  fetch(overpassUrl)
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.elements.length > 0) {
-        let nearestHospital = null;
-        let minDistance = Infinity;
-
-        data.elements.forEach((hospital) => {
-          const hospitalLat = hospital.lat;
-          const hospitalLon = hospital.lon;
-
-          const distance = haversine(lat, lon, hospitalLat, hospitalLon);
-
-          if (distance < minDistance) {
-            minDistance = distance;
-            nearestHospital = {
-              lat: hospitalLat,
-              lon: hospitalLon,
-              name: hospital.tags.name || "Unnamed Hospital",
-            };
-          }
-        });
-
-        L.marker([nearestHospital.lat, nearestHospital.lon])
-          .addTo(map)
-          .bindPopup(nearestHospital.name)
-          .openPopup();
-
-        showRoute(
-          lat,
-          lon,
-          nearestHospital.lat,
-          nearestHospital.lon,
-          nearestHospital.name
-        );
-      } else {
-        alert("No hospital found  5km.");
-      }
+function showRoute(startLat, startLon, endLat, endLon, hospitalName) {
+    if (window.routeControl) {
+        map.removeControl(window.routeControl);
+    }
+    
+    window.routeControl = L.Routing.control({
+        waypoints: [
+            L.latLng(startLat, startLon),
+            L.latLng(endLat, endLon)
+        ],
+        routeWhileDragging: false,
+        addWaypoints: false,
+        lineOptions: {
+            styles: [{ color: "blue", weight: 5 }]
+        },
+        createMarker: function() {
+            return null;
+        },
+        router: L.Routing.osrmv1({
+            serviceUrl: 'http://router.project-osrm.org/route/v1',
+            profile: 'driving',
+            timeout: 30000
+        }),
+        show: true
     })
-    .catch((error) => {
-      console.error("Error finding hospitals:", error);
-    });
-}
-
-// Function to check if a traffic light is within 11 meters of the route
-function checkTrafficLightsInRange(route, trafficLights) {
-    const trafficLightsInRange = [];
-  
-    trafficLights.forEach((light) => {
-      let isInRange = false;
-  
-      for (let i = 0; i < route.length - 1; i++) {
-        const pointA = route[i];
-        const pointB = route[i + 1];
-  
-        const distance = calculateDistanceToLineSegment(
-          pointA.lat,
-          pointA.lon,
-          pointB.lat,
-          pointB.lon,
-          light.lat,
-          light.lon
-        );
-  
-        if (distance <= 0.01) {
-          isInRange = true;
-          break;
-        }
-      }
-  
-      if (isInRange) {
-        trafficLightsInRange.push(light);
-      }
-    });
-  
-    return trafficLightsInRange;
-}
-
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radius of the Earth in km
-  const dLat = degreesToRadians(lat2 - lat1);
-  const dLon = degreesToRadians(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(degreesToRadians(lat1)) *
-      Math.cos(degreesToRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in km
-}
-
-function degreesToRadians(degrees) {
-  return degrees * (Math.PI / 180);
-}
-
-function calculateDistanceToLineSegment(x1, y1, x2, y2, x3, y3) {
-    // Calculate the line segment length squared
-    const lineLengthSq = (x2 - x1) ** 2 + (y2 - y1) ** 2;
-  
-    if (lineLengthSq === 0) return haversine(x1, y1, x3, y3); // If points A and B are the same, return point distance
-  
-    // Project point C onto the line defined by points A and B
-    let t = ((x3 - x1) * (x2 - x1) + (y3 - y1) * (y2 - y1)) / lineLengthSq;
-  
-    // Clamp t to the range [0, 1]
-    t = Math.max(0, Math.min(1, t));
-  
-    // Find the closest point on the line segment to the traffic light
-    const closestPointX = x1 + t * (x2 - x1);
-    const closestPointY = y1 + t * (y2 - y1);
-  
-    // Return the haversine distance between the closest point and the traffic light
-    return haversine(closestPointX, closestPointY, x3, y3) * 1000; // Convert km to meters
-}
-
-function showRoute(lat1, lon1, lat2, lon2, hospitalName) {
-  L.Routing.control({
-    waypoints: [L.latLng(lat1, lon1), L.latLng(lat2, lon2)],
-    routeWhileDragging: false,
-    addWaypoints: false,
-    lineOptions: {
-      styles: [{ color: "blue", weight: 5 }],
-    },
-    draggableWaypoints: false,
-    createMarker: function () {
-      return null;
-    },
-  })
-    .on("routesfound", function (e) {
-      const route = e.routes[0];
-      const time = route.summary.totalTime;
-      const eta = (time / 60).toFixed(0);
-
-      displayHospitalInfo(
-        hospitalName,
-        selectedSeverity,
-        selectedEmergencyType,
-        eta
-      );
-      sendEmergency(hospitalName, selectedSeverity, selectedEmergencyType, eta);
-
-      const routeCoordinates = route.coordinates.map((point) => ({
-        lat: point.lat,
-        lon: point.lng,
-      }));
-
-      // Check for traffic lights in range of the route
-      const lightsInRange = checkTrafficLightsInRange(routeCoordinates, trafficLights);
-
-      if (lightsInRange.length > 0) {
-        // console.log("DEBUG: Traffic lights within 11 meters of the route:", lightsInRange);
-        lightsInRange.forEach((light) => {
-          light.status = "GREEN";
-          // console.log(`Traffic Light ${light.id} Status: ${light.status}!`);
-        });
-
-        lightsInRange.forEach((light) => {
-          L.marker([light.lat, light.lon])
-            .addTo(map)
-            .bindPopup(`Traffic Light ${light.id} is within range!`)
-            .openPopup();
-        });
-      } else {
-        console.log("No traffic lights within 11 meters of the route.");
-      }
-
-      triggers.forEach((trigger) => {
-        const isInPath = routeCoordinates.some((point) => {
-          const distance = haversine(point.lat, point.lon, trigger.lat, trigger.lon);
-          return distance <= 0.015; // Adjust this threshold if necessary
-        });
-      
-        if (isInPath) {
-          console.log(`Trigger ${trigger.id} is in the vehicle's path.`);
-          activateTrafficLightsForTrigger(trigger.id);
-        }
-      });            
+    .on('routesfound', function(e) {
+        const route = e.routes[0];
+        const time = route.summary.totalTime;
+        const eta = Math.round(time / 60);
+        displayHospitalInfo(hospitalName, selectedSeverity, selectedEmergencyType, eta);
+        sendEmergency(hospitalName, selectedSeverity, selectedEmergencyType, eta);
+        checkTriggerPoints(route.coordinates);
+    })
+    .on('routingerror', function(e) {
+        console.error('Routing error:', e.error);
+        alert('Error finding route. Please try again.');
     })
     .addTo(map);
 }
 
-
 function displayHospitalInfo(hospitalName, severity, emergencyType, eta) {
-  document.getElementById("hospital-info").style.display = "block";
-  document.getElementById(
-    "hospital-name"
-  ).textContent = `Hospital Name: ${hospitalName}`;
-  document.getElementById(
-    "hospital-severity"
-  ).textContent = `Severity: ${severity}`;
-  document.getElementById(
-    "hospital-condition"
-  ).textContent = `Emergency Type: ${emergencyType}`;
-  document.getElementById(
-    "hospital-eta"
-  ).textContent = `Estimated Time of Arrival: ${eta} minutes`;
+    document.getElementById("hospital-info").style.display = "block";
+    document.getElementById("hospital-name").textContent = `Hospital: ${hospitalName}`;
+    document.getElementById("hospital-severity").textContent = `Severity: ${severity}`;
+    document.getElementById("hospital-condition").textContent = `Emergency: ${emergencyType}`;
+    document.getElementById("hospital-eta").textContent = `ETA: ${eta} minutes`;
 }
 
 function sendEmergency(hospitalName, severity, emergencyType, eta) {
-  const emergencyInfo = {
-    hospitalName: hospitalName,
-    severity: severity,
-    emergencyType: emergencyType,
-    eta: eta,
-  };
-
-  fetch("http://localhost:5000/submit-patient", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(emergencyInfo),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.message) {
-        console.log("Success:", data.message);
-      } else {
-        console.error("Error:", data.error);
-      }
+    fetch("http://localhost:5000/submit-patient", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            hospitalName,
+            severity,
+            emergencyType,
+            eta
+        })
     })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            console.log("Success:", data.message);
+        } else {
+            console.error("Error:", data.error);
+        }
+    })
+    .catch(error => console.error("Error:", error));
 }
 
-document.getElementById("ambulance-form").addEventListener("submit", function (e) {
+function initialize() {
+    Object.values(trafficLights).forEach(light => light.updateMarker());
+    addTriggerMarkers();
+}
+
+// Form submission handler
+document.getElementById("ambulance-form").addEventListener("submit", function(e) {
     e.preventDefault();
     if (selectedSeverity && selectedEmergencyType) {
-      getLocation();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+        // ! towards Traffic Signal 5
+        // const startLat = 12.88543;
+        // const startLon = 74.839345;        
+        const startLat = 12.885443;
+        const startLon = 74.840959;
+
+        // ! towards Traffic Signal 1
+        // const startLat = 12.883527;
+        // const startLon = 74.839174;
+
+        // ! towards Traffic Signal 2
+        // const startLat = 12.886675;
+        // const startLon = 74.838600;
+        // const startLat =  12.886133;
+        // const startLon = 74.838792;
+
+        // ! B.C. Road
+        // const startLat = 12.878200;
+        // const startLon = 75.034000;
+
+        map.setView([startLat, startLon], 13);
+        initialize();
+        findNearestHospital(startLat, startLon);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      alert("Please select both severity and emergency type.");
+        alert("Please select both severity and emergency type");
     }
 });
+
+// Initialize the map when page loads
+initialize();
