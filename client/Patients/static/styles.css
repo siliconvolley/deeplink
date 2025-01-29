@@ -130,6 +130,10 @@ button.other {
   color: #ddd;
 }
 
+.ambulance-icon {
+  filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.7));
+}
+
 @media (max-width: 768px) {
   .button-group {
     flex-direction: column;
