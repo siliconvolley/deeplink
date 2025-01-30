@@ -1,101 +1,74 @@
-async function loadDashboardData() {
+async function fetchPatients() {
     const token = localStorage.getItem('token');
+    
     if (!token) {
-        window.location.href = '/hospital-login';
+        console.error("No token found, redirecting to login...");
+        window.location.href = 'hospital-login'; // Redirect to login if no token
         return;
     }
 
     try {
-        const response = await fetch('/api/dashboard-data', {
+        const response = await fetch('/patients', {
             method: 'GET',
             headers: {
-                'Authorization': token,
-                'Content-Type': 'application/json'
+                'Authorization': token
             }
         });
 
-        if (response.ok) {
-            const emergencies = await response.json();
-            displayEmergencies(emergencies);
-        } else {
-            const error = await response.json();
-            console.error('Dashboard error:', error);
-            if (response.status === 401) {
-                // Token invalid or expired
-                localStorage.removeItem('token');
-                window.location.href = '/hospital-login';
-            }
+        if (!response.ok) {
+            throw new Error("Failed to fetch patients, please try again.");
         }
+
+        const patients = await response.json();
+        const patientList = document.getElementById('patient-list');
+        patientList.innerHTML = '';  // Clear any existing content
+
+        if (patients.length === 0) {
+            patientList.innerHTML = '<p>No incoming patients.</p>';
+        } else {
+            patients.forEach(patient => {
+                const patientDiv = document.createElement('div');
+                patientDiv.classList.add('patient-div'); // Add class for styling
+
+                // Determine the hospital name color based on severity
+                let severityClass = '';
+                switch (patient.severity.toLowerCase()) {
+                    case 'low':
+                        severityClass = 'hospital-low';
+                        break;
+                    case 'moderate':
+                        severityClass = 'hospital-medium';
+                        break;
+                    case 'high':
+                        severityClass = 'hospital-high';
+                        break;
+                    default:
+                        severityClass = ''; // Default if severity isn't recognized
+                }
+
+                patientDiv.innerHTML = `
+                    <h3 class="${severityClass}">${patient.hospitalName}</h3>
+                    <p>Severity: ${patient.severity}</p>
+                    <p>Emergency Type: ${patient.emergencyType}</p>
+                    <p>ETA: ${patient.eta} minutes</p>
+                    <p>Timestamp: ${new Date(patient.timestamp).toLocaleString()}</p>
+                `;
+
+                patientList.appendChild(patientDiv); // Append each patient to the list
+            });
+        }
+
     } catch (error) {
-        console.error('Dashboard error:', error);
-        alert('Error loading dashboard data');
+        console.error(error.message);
+        document.getElementById('patient-list').innerHTML = '<p>Error fetching patients. Please try again.</p>';
     }
 }
 
-function displayEmergencies(emergencies) {
-    const patientList = document.getElementById('patient-list');
-    patientList.innerHTML = '';
-
-    if (emergencies.length === 0) {
-        patientList.innerHTML = '<p>No emergencies found</p>';
-        return;
-    }
-
-    emergencies.forEach(emergency => {
-        const emergencyDiv = document.createElement('div');
-        emergencyDiv.className = 'emergency-card';
-        emergencyDiv.innerHTML = `
-            <h3>${emergency.hospitalName}</h3>
-            <p>Severity: ${emergency.severity}</p>
-            <p>Emergency Type: ${emergency.emergencyType}</p>
-            <p>ETA: ${emergency.eta} minutes</p>
-            <p>Timestamp: ${emergency.timestamp}</p>
-        `;
-        patientList.appendChild(emergencyDiv);
-    });
-}
-
-// Add logout functionality
-document.getElementById('logout-button').addEventListener('click', () => {
-    localStorage.removeItem('token');
-    window.location.href = '/hospital-login';
+// Logout button functionality
+document.getElementById('logout-button').addEventListener('click', function() {
+    localStorage.removeItem('token'); // Remove the token
+    window.location.href = 'hospital-login'; // Redirect to the login page
 });
 
-// Load dashboard data when page loads
-document.addEventListener('DOMContentLoaded', loadDashboardData);
-
-function fetchIncomingPatients() {
-    fetch('/get_incoming_patients')
-        .then(response => response.json())
-        .then(cases => {
-            console.log('Emergency cases:', cases); // Debug line
-            const incomingList = document.getElementById('incoming-list');
-            incomingList.innerHTML = '';
-            
-            if (cases.length === 0) {
-                incomingList.innerHTML = '<p>No emergency cases found</p>';
-                return;
-            }
-
-            cases.forEach(emergency => {
-                const emergencyDiv = document.createElement('div');
-                emergencyDiv.className = 'emergency-case';
-                emergencyDiv.innerHTML = `
-                    <h3>${emergency.hospitalName || 'Unknown Hospital'}</h3>
-                    <p>Severity: ${emergency.severity || 'Not specified'}</p>
-                    <p>Emergency Type: ${emergency.emergencyType || 'Not specified'}</p>
-                    <p>ETA: ${emergency.eta || 'Unknown'} minutes</p>
-                    <p>Timestamp: ${emergency.timestamp || 'No timestamp'}</p>
-                `;
-                incomingList.appendChild(emergencyDiv);
-            });
-        })
-        .catch(error => {
-            console.error('Error fetching emergency cases:', error);
-            const incomingList = document.getElementById('incoming-list');
-            incomingList.innerHTML = '<p>Error loading emergency cases</p>';
-        });
-}
-
-// Call this function when page loads
-document.addEventListener('DOMContentLoaded', fetchIncomingPatients);
+// Fetch patients when the dashboard loads
+fetchPatients();

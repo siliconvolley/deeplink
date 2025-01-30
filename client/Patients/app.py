@@ -2,12 +2,9 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS 
 from pymongo import MongoClient
 import bcrypt  
-from datetime import datetime, timedelta
+from datetime import datetime
 import jwt
 import os
-from werkzeug.security import check_password_hash
-import logging
-from functools import wraps
 
 app = Flask(__name__)
 CORS(app)  
@@ -16,12 +13,18 @@ CORS(app)
 app.config['SECRET_KEY'] = 'yourSecretKey'  # Use environment variable in production
 client = MongoClient('mongodb://localhost:27017/')
 db = client['Hospital'] 
+
+# Add MongoDB connection verification
+try:
+    # The ismaster command is cheap and does not require auth.
+    client.admin.command('ismaster')
+    print("MongoDB connected successfully on port", client.PORT)
+except Exception as e:
+    print("Failed to connect to MongoDB. Error:", e)
+
 emergencies_collection = db['emergencies']  
 hospitals_collection = db['hospitals'] 
 junctions_collection = db['junctions']
-
-# Add this near the top of your file
-logging.basicConfig(level=logging.DEBUG)
 
 # Authentication decorator
 def authenticate_token(f):
@@ -38,27 +41,6 @@ def authenticate_token(f):
     wrapper.__name__ = f.__name__
     return wrapper
 
-# Add this decorator for protected routes
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        
-        if not token:
-            return jsonify({'message': 'Token is missing'}), 401
-        
-        try:
-            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-            current_hospital = hospitals_collection.find_one({"hospitalName": data['hospitalName']})
-            if not current_hospital:
-                return jsonify({'message': 'Invalid token'}), 401
-        except:
-            return jsonify({'message': 'Invalid token'}), 401
-        
-        return f(current_hospital, *args, **kwargs)
-    
-    return decorated
-
 # Routes
 @app.route('/')
 def index():
@@ -72,49 +54,30 @@ def ambulance_page():
 def hospital_login():
     return render_template('login.html')
 
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
 @app.route('/api/login', methods=['POST'])
 def login():
-    try:
-        data = request.get_json()
-        hospital_name = data.get('hospitalName')
-        password = data.get('password')
-        
-        logging.info(f"Login attempt for hospital: {hospital_name}")
-        
-        hospital = hospitals_collection.find_one({"hospitalName": hospital_name})
-        
-        if not hospital:
-            logging.warning(f"Hospital not found: {hospital_name}")
-            return jsonify({'message': 'Invalid credentials'}), 401
-        
-        # Convert password to bytes if it's not already
-        if isinstance(password, str):
-            password = password.encode('utf-8')
-        
-        # Get stored hash from database
-        stored_hash = hospital['password']
-        
-        # Check if the stored hash needs to be decoded from string
-        if isinstance(stored_hash, str):
-            stored_hash = stored_hash.encode('utf-8')
-        
-        logging.info("Attempting password verification")
-        # Verify password using bcrypt
-        if bcrypt.checkpw(password, stored_hash):
-            logging.info("Password verified successfully")
-            token = jwt.encode({
-                'hospitalName': hospital_name,
-                'exp': datetime.utcnow() + timedelta(hours=24)
-            }, app.config['SECRET_KEY'])
-            
-            return jsonify({'token': token})
-        else:
-            logging.warning("Password verification failed")
-            return jsonify({'message': 'Invalid credentials'}), 401
-            
-    except Exception as e:
-        logging.error(f"Login error: {str(e)}")
-        return jsonify({'message': str(e)}), 500
+    data = request.json
+    hospital_name = data.get('hospitalName')
+    password = data.get('password')
+
+    hospital = hospitals_collection.find_one({"hospitalName": hospital_name})
+
+    if not hospital:
+        return jsonify({"message": "Invalid credentials: Hospital Not Found"}), 401
+
+    if bcrypt.checkpw(password.encode('utf-8'), hospital['password'].encode('utf-8')):
+        token = jwt.encode(
+            {"hospitalName": hospital_name},
+            app.config['SECRET_KEY'],
+            algorithm="HS256"
+        )
+        return jsonify({"token": token})
+    
+    return jsonify({"message": "Invalid credentials: Wrong Password"}), 401
 
 @app.route('/api/patients', methods=['GET'])
 @authenticate_token
@@ -128,12 +91,9 @@ def get_patients():
     for patient in incoming_patients:
         patient['_id'] = str(patient['_id'])
     
-    return jsonify(incoming_patients)
 
-@app.route('/submit-patient', methods=['POST', 'OPTIONS'])  # Added OPTIONS method
+@app.route('/api/submit-patient', methods=['POST'])
 def submit_patient():
-    if request.method == 'OPTIONS':
-        return '', 204 
     data = request.json
     current_timestamp = datetime.now().isoformat()
 
@@ -164,61 +124,6 @@ def submit_patient():
     })
 
     return jsonify({"message": "Patient data submitted successfully!"}), 201
-
-@app.route('/dashboard')
-def dashboard_page():
-    return render_template('dashboard.html')
-
-@app.route('/api/dashboard-data')
-@token_required
-def get_dashboard_data(current_hospital):
-    try:
-        # Get all emergencies for this hospital
-        emergencies = list(emergencies_collection.find(
-            {"hospitalName": current_hospital['hospitalName']},
-            {'_id': 0}
-        ).sort('timestamp', -1))
-        
-        # Format timestamps
-        for emergency in emergencies:
-            emergency['timestamp'] = emergency['timestamp'].strftime('%m/%d/%Y, %I:%M:%S %p')
-        
-        return jsonify(emergencies)
-    except Exception as e:
-        return jsonify({'message': str(e)}), 500
-
-@app.route('/check_hospital/<name>')
-def check_hospital(name):
-    hospital = hospitals_collection.find_one({"hospitalName": name})
-    if hospital:
-        return jsonify({
-            "found": True,
-            "stored_hash": str(hospital['password'])
-        })
-    return jsonify({"found": False})
-
-@app.route('/get_incoming_patients')
-def get_incoming_patients():
-    try:
-        # Add debug logging
-        print("Attempting to fetch incoming emergencies...")
-        
-        # Get all emergency cases
-        incoming_cases = list(db.emergencies.find())
-        
-        # Log the result
-        print(f"Found {len(incoming_cases)} emergency cases")
-        print("Cases:", incoming_cases)  # This will show us the actual data
-        
-        # Convert ObjectId to string for JSON serialization
-        for case in incoming_cases:
-            if '_id' in case:
-                case['_id'] = str(case['_id'])
-            
-        return jsonify(incoming_cases)
-    except Exception as e:
-        print(f"Error fetching emergency cases: {e}")
-        return jsonify([])
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
