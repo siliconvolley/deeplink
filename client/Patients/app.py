@@ -90,6 +90,8 @@ def get_patients():
     # Convert ObjectId to string for JSON serialization
     for patient in incoming_patients:
         patient['_id'] = str(patient['_id'])
+
+    return jsonify(incoming_patients)
     
 
 @app.route('/api/submit-patient', methods=['POST'])

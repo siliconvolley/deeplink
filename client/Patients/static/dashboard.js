@@ -8,7 +8,7 @@ async function fetchPatients() {
     }
 
     try {
-        const response = await fetch('/patients', {
+        const response = await fetch('/api/patients', {
             method: 'GET',
             headers: {
                 'Authorization': token
@@ -20,6 +20,7 @@ async function fetchPatients() {
         }
 
         const patients = await response.json();
+        console.log(patients);
         const patientList = document.getElementById('patient-list');
         patientList.innerHTML = '';  // Clear any existing content
 
