@@ -1,0 +1,65 @@
+async function loadDashboardData() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/hospital-login';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/dashboard-data', {
+            method: 'GET',
+            headers: {
+                'Authorization': token,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const emergencies = await response.json();
+            displayEmergencies(emergencies);
+        } else {
+            const error = await response.json();
+            console.error('Dashboard error:', error);
+            if (response.status === 401) {
+                // Token invalid or expired
+                localStorage.removeItem('token');
+                window.location.href = '/hospital-login';
+            }
+        }
+    } catch (error) {
+        console.error('Dashboard error:', error);
+        alert('Error loading dashboard data');
+    }
+}
+
+function displayEmergencies(emergencies) {
+    const patientList = document.getElementById('patient-list');
+    patientList.innerHTML = '';
+
+    if (emergencies.length === 0) {
+        patientList.innerHTML = '<p>No emergencies found</p>';
+        return;
+    }
+
+    emergencies.forEach(emergency => {
+        const emergencyDiv = document.createElement('div');
+        emergencyDiv.className = 'emergency-card';
+        emergencyDiv.innerHTML = `
+            <h3>${emergency.hospitalName}</h3>
+            <p>Severity: ${emergency.severity}</p>
+            <p>Emergency Type: ${emergency.emergencyType}</p>
+            <p>ETA: ${emergency.eta} minutes</p>
+            <p>Timestamp: ${emergency.timestamp}</p>
+        `;
+        patientList.appendChild(emergencyDiv);
+    });
+}
+
+// Add logout functionality
+document.getElementById('logout-button').addEventListener('click', () => {
+    localStorage.removeItem('token');
+    window.location.href = '/hospital-login';
+});
+
+// Load dashboard data when page loads
+document.addEventListener('DOMContentLoaded', loadDashboardData);
