@@ -197,5 +197,28 @@ def check_hospital(name):
         })
     return jsonify({"found": False})
 
+@app.route('/get_incoming_patients')
+def get_incoming_patients():
+    try:
+        # Add debug logging
+        print("Attempting to fetch incoming emergencies...")
+        
+        # Get all emergency cases
+        incoming_cases = list(db.emergencies.find())
+        
+        # Log the result
+        print(f"Found {len(incoming_cases)} emergency cases")
+        print("Cases:", incoming_cases)  # This will show us the actual data
+        
+        # Convert ObjectId to string for JSON serialization
+        for case in incoming_cases:
+            if '_id' in case:
+                case['_id'] = str(case['_id'])
+            
+        return jsonify(incoming_cases)
+    except Exception as e:
+        print(f"Error fetching emergency cases: {e}")
+        return jsonify([])
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

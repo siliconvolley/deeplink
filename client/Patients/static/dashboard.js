@@ -63,3 +63,39 @@ document.getElementById('logout-button').addEventListener('click', () => {
 
 // Load dashboard data when page loads
 document.addEventListener('DOMContentLoaded', loadDashboardData);
+
+function fetchIncomingPatients() {
+    fetch('/get_incoming_patients')
+        .then(response => response.json())
+        .then(cases => {
+            console.log('Emergency cases:', cases); // Debug line
+            const incomingList = document.getElementById('incoming-list');
+            incomingList.innerHTML = '';
+            
+            if (cases.length === 0) {
+                incomingList.innerHTML = '<p>No emergency cases found</p>';
+                return;
+            }
+
+            cases.forEach(emergency => {
+                const emergencyDiv = document.createElement('div');
+                emergencyDiv.className = 'emergency-case';
+                emergencyDiv.innerHTML = `
+                    <h3>${emergency.hospitalName || 'Unknown Hospital'}</h3>
+                    <p>Severity: ${emergency.severity || 'Not specified'}</p>
+                    <p>Emergency Type: ${emergency.emergencyType || 'Not specified'}</p>
+                    <p>ETA: ${emergency.eta || 'Unknown'} minutes</p>
+                    <p>Timestamp: ${emergency.timestamp || 'No timestamp'}</p>
+                `;
+                incomingList.appendChild(emergencyDiv);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching emergency cases:', error);
+            const incomingList = document.getElementById('incoming-list');
+            incomingList.innerHTML = '<p>Error loading emergency cases</p>';
+        });
+}
+
+// Call this function when page loads
+document.addEventListener('DOMContentLoaded', fetchIncomingPatients);
