@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Medical System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Emergency Medical System</h1>
+        <div class="button-group">
+            <a href="{{ url_for('ambulance_page') }}" class="landing-btn">Ambulance Service</a>
+            <a href="{{ url_for('hospital_login') }}" class="landing-btn">Hospital Login</a>
+        </div>
+    </div>
+</body>
+</html>

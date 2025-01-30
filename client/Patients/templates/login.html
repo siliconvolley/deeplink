@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hospital Login</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="container">
         <h1>Hospital Login</h1>
-        <form id="login-form">
+        <form method="POST" action="/api/login">
             <div class="form-group">
                 <label for="hospital-name" class="label">Hospital Name</label>
-                <input type="text" id="hospital-name" name="hospital-name" placeholder="Enter hospital name" required>
+                <input type="text" id="hospital-name" name="hospitalName" placeholder="Enter hospital name" required>
             </div>
             <div class="form-group">
                 <label for="password" class="label">Password</label>
