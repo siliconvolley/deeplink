@@ -94,7 +94,7 @@ def get_patients():
     return jsonify(incoming_patients)
     
 
-@app.route('/api/submit-patient', methods=['POST'])
+@app.route('/submit-patient', methods=['POST'])
 def submit_patient():
     data = request.json
     current_timestamp = datetime.now().isoformat()

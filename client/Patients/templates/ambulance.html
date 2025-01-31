@@ -37,18 +37,10 @@
         <div class="form-group">
           <span class="label">Select Emergency Type:</span>
           <div class="button-group" id="emergency-buttons">
-            <button
-              type="button"
-              class="emergency-btn"
-              data-emergency="cardiac"
-            >
+            <button type="button" class="emergency-btn" data-emergency="cardiac">
               Cardiac Arrest
             </button>
-            <button
-              type="button"
-              class="emergency-btn"
-              data-emergency="accident"
-            >
+            <button type="button" class="emergency-btn" data-emergency="accident">
               Accident
             </button>
             <button type="button" class="emergency-btn" data-emergency="fire">
@@ -58,6 +50,17 @@
               Other
             </button>
           </div>
+        </div>
+
+        <!-- Add Additional Information Field -->
+        <div class="form-group">
+          <label for="additional-info" class="label">Patient ID:</label>
+          <input
+            type="text"
+            id="additional-info"
+            name="additionalInfo"
+            placeholder="Patient ID"
+          />
         </div>
 
         <button type="submit" class="submit-btn">Submit</button>
@@ -78,6 +81,5 @@
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
     <script type="module" src="../static/main.js"></script>
-
   </body>
 </html>
