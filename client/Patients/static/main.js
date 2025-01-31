@@ -43,9 +43,10 @@ class TrafficLight {
     updateStatus(newStatus) {
         this.status = newStatus;
         this.updateMarker();
-        if (this.status === "GREEN") {
-            sendSignalUpdate(this.id, true);
-        }
+        // TODO: Add server communication
+        // if (this.status === "GREEN") {
+        //     sendSignalUpdate(this.id, true);
+        // }
     }
 
     updateMarker() {
@@ -430,17 +431,17 @@ function displayHospitalInfo(hospitalName, severity, emergencyType, eta) {
     document.getElementById("hospital-eta").textContent = `ETA: ${eta} minutes`;
 }
 
-// Server Communication
-function sendSignalUpdate(signalId, isGreen) {
-    fetch("http://127.0.0.1:5001/traffic_signal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            isGreen: isGreen,
-            signalNumber: signalId === 'A1' ? 1 : signalId === 'B1' ? 2 : 3
-        })
-    }).catch(error => console.error("Error sending signal update:", error));
-}
+// TODO: Add server communication
+// function sendSignalUpdate(signalId, isGreen) {
+//     fetch("http://127.0.0.1:5001/traffic_signal", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//             isGreen: isGreen,
+//             signalNumber: signalId === 'A1' ? 1 : signalId === 'B1' ? 2 : 3
+//         })
+//     }).catch(error => console.error("Error sending signal update:", error));
+// }
 
 function sendEmergency(hospitalName, severity, emergencyType, eta, additionalInfo) {
     fetch("http://localhost:5000/submit-patient", {
