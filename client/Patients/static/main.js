@@ -224,6 +224,8 @@ const triggerPoints = {
         id: 'T15',
         lat: 12.885499026826007,
         lon: 74.862842801463,
+        lat: 12.885499026826007,
+        lon: 74.862842801463,
         controlsSignal: 'C5',
         road: 'NEW_ROAD',
         direction: 'WEST',
@@ -313,6 +315,87 @@ function initializeJunctions() {
 function handleRouteFound(route, hospitalName, additionalInfo) {
     const ambulanceId = `amb-${Date.now()}`;
     activeAmbulanceId = ambulanceId;
+    
+    const ambulanceMarker = L.circleMarker([route.coordinates[0].lat, route.coordinates[0].lng], {
+        radius: 12,
+        fillColor: 'skyblue',
+        fillOpacity: 1,
+        color: '#000',
+        weight: 2,
+        zIndexOffset: 1000
+    }).addTo(map);
+
+    let currentPoint = 0;
+    let activeSignals = new Set(); // Track which signals are currently active
+
+    const moveAmbulance = () => {
+        if (currentPoint >= route.coordinates.length) {
+            console.log(`🏥 Ambulance ${ambulanceId} has reached ${hospitalName}`);
+            map.removeLayer(ambulanceMarker);
+            return;
+        }
+
+        if (currentPoint === 0) {
+            console.log(`🚑 Ambulance ${ambulanceId} has started its journey to ${hospitalName}`);
+        }
+
+        const coord = route.coordinates[currentPoint];
+        ambulanceMarker.setLatLng([coord.lat, coord.lng]);
+        
+        // Check for nearby triggers
+        Object.values(triggerPoints).forEach(trigger => {
+            const distanceToTrigger = haversine(
+                coord.lat, 
+                coord.lng, 
+                trigger.lat, 
+                trigger.lon
+            );
+            
+            const associatedSignal = trafficLights[trigger.controlsSignal];
+            const distanceToSignal = haversine(
+                coord.lat,
+                coord.lng,
+                associatedSignal.lat,
+                associatedSignal.lon
+            );
+
+            // If ambulance is within =10 meters of trigger point
+            if (distanceToTrigger <= 0.01 && !activeSignals.has(trigger.controlsSignal)) {
+                console.log(`🚦 Ambulance approaching signal ${trigger.controlsSignal}`);
+                trafficLights[trigger.controlsSignal].updateStatus("GREEN");
+                activeSignals.add(trigger.controlsSignal);
+                console.log(`🟢 Signal ${trigger.controlsSignal} changed to GREEN`);
+            }
+            
+            // Check if ambulance has crossed the traffic light
+            if (activeSignals.has(trigger.controlsSignal)) {
+                // Calculate if ambulance has passed the signal
+                // Using a small buffer distance (0.02 km or 20 meters) after crossing
+                if (distanceToSignal > 0.01) {
+                    const prevCoord = route.coordinates[Math.max(0, currentPoint - 1)];
+                    const prevDistanceToSignal = haversine(
+                        prevCoord.lat,
+                        prevCoord.lng,
+                        associatedSignal.lat,
+                        associatedSignal.lon
+                    );
+                    
+                    // If previous position was closer to signal than current position,
+                    // it means we've crossed the signal
+                    if (prevDistanceToSignal < distanceToSignal) {
+                        trafficLights[trigger.controlsSignal].updateStatus("RED");
+                        activeSignals.delete(trigger.controlsSignal);
+                        console.log(`🔴 Signal ${trigger.controlsSignal} changed to RED after ambulance passed`);
+                    }
+                }
+            }
+        });
+
+        currentPoint++;
+        setTimeout(moveAmbulance, 500);
+    };
+
+    moveAmbulance();
     
     const ambulanceMarker = L.circleMarker([route.coordinates[0].lat, route.coordinates[0].lng], {
         radius: 12,
@@ -483,6 +566,8 @@ document.getElementById("ambulance-form").addEventListener("submit", function(e)
     additionalInfo = document.getElementById("additional-info").value;
 
     if (selectedSeverity && selectedEmergencyType) {
+        const startLat = 12.893882508426671;
+        const startLon = 74.85879787465468;
         const startLat = 12.893882508426671;
         const startLon = 74.85879787465468;
         
