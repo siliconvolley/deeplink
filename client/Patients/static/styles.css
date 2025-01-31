@@ -1,3 +1,4 @@
+/* General page layout */
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: #1c1c1c;
@@ -10,6 +11,7 @@ body {
   overflow-x: hidden;
 }
 
+/* Container styles */
 .container {
   width: 100%;
   max-width: 850px;
@@ -20,25 +22,64 @@ body {
   box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
 }
 
+.container-dta {
+  width: 100%;
+  max-width: 800px;
+  padding: 30px;
+  background-color: #333;
+  border-radius: 12px;
+  box-shadow: 0px 6px 24px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 80vh;
+}
+
+/* Headings */
 h1 {
   text-align: center;
   color: #fff;
-  margin-bottom: 20px;
-  font-size: 32px;
+  margin-bottom: 25px;
+  font-size: 28px;
+  font-weight: 600;
 }
 
-.form-group {
-  margin-bottom: 25px;
+/* Form elements */
+.form-group, .input-group {
+  margin-bottom: 20px;
 }
 
 .label {
   display: block;
   font-weight: bold;
-  font-size: 16px;
-  margin-bottom: 10px;
+  font-size: 14px;
+  margin-bottom: 8px;
   color: #ddd;
 }
 
+input {
+  width: 100%;
+  padding: 12px 15px;
+  background-color: #444;
+  border: 1px solid #555;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
+}
+
+input::placeholder {
+  color: #bbb;
+}
+
+input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Button styles */
 .button-group {
   display: flex;
   justify-content: space-between;
@@ -62,15 +103,17 @@ button.submit-btn {
   background-color: #28a745;
   color: white;
   font-size: 18px;
-  padding: 12px 0;
+  padding: 14px 0;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  margin-top: 10px;
 }
 
 button.submit-btn:hover {
-  background-color: #208236;
+  background-color: #218838;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 button:hover {
@@ -86,6 +129,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Severity button colors */
 button.low {
   background-color: #007bff;
 }
@@ -102,6 +146,7 @@ button.other {
   background-color: #6c757d;
 }
 
+/* Map styles */
 #map {
   width: 100%;
   height: 450px;
@@ -110,6 +155,7 @@ button.other {
   border: 2px solid #444;
 }
 
+/* Hospital information */
 .hospital-info {
   margin-top: 20px;
   padding: 15px;
@@ -130,6 +176,96 @@ button.other {
   color: #ddd;
 }
 
+/* Patient list styles */
+#patient-list {
+  overflow-y: auto;
+  flex-grow: 1;
+  padding-right: 10px;
+  margin-bottom: 20px;
+  max-height: calc(100% - 60px);
+}
+
+.patient-div {
+  margin-bottom: 15px;
+  padding: 20px;
+  background-color: #444;
+  border-radius: 8px;
+  color: white;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.patient-div h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #ffcc00;
+}
+
+.patient-div p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #ccc;
+}
+
+/* Hospital severity colors */
+.hospital-low {
+  color: #4caf50;
+}
+
+.hospital-medium {
+  color: #ff9800;
+}
+
+.hospital-high {
+  color: #f44336;
+}
+
+/* Messages and form footer */
+.message {
+  text-align: center;
+  color: #ff4d4d;
+  margin-bottom: 15px;
+}
+
+.form-footer {
+  text-align: center;
+  color: #bbb;
+}
+
+.form-footer a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.form-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Logout button */
+button#logout-button {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 0;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  margin-top: 10px;
+  width: 25%;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  max-height: 40px;
+}
+
+button#logout-button:hover {
+  background-color: #218838;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Media queries */
 @media (max-width: 768px) {
   .button-group {
     flex-direction: column;

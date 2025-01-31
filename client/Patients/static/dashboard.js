@@ -3,12 +3,12 @@ async function fetchPatients() {
     
     if (!token) {
         console.error("No token found, redirecting to login...");
-        window.location.href = 'login.html'; // Redirect to login if no token
+        window.location.href = 'hospital-login'; // Redirect to login if no token
         return;
     }
 
     try {
-        const response = await fetch('/patients', {
+        const response = await fetch('/api/patients', {
             method: 'GET',
             headers: {
                 'Authorization': token
@@ -20,6 +20,7 @@ async function fetchPatients() {
         }
 
         const patients = await response.json();
+        console.log(patients);
         const patientList = document.getElementById('patient-list');
         patientList.innerHTML = '';  // Clear any existing content
 
@@ -67,7 +68,7 @@ async function fetchPatients() {
 // Logout button functionality
 document.getElementById('logout-button').addEventListener('click', function() {
     localStorage.removeItem('token'); // Remove the token
-    window.location.href = 'login.html'; // Redirect to the login page
+    window.location.href = 'hospital-login'; // Redirect to the login page
 });
 
 // Fetch patients when the dashboard loads
