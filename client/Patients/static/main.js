@@ -13,6 +13,11 @@ let selectedEmergencyType = null;
 let additionalInfo = "";
 let activeAmbulanceId = null;
 
+// Simulation Parameters
+const SIMUATION_STEPS = 20; // Number of steps to interpolate between points (more steps = smoother animation)
+const SIMUATION_SPEED = 50; // milliseconds between each step (lower = faster)
+
+
 // UI Event Handlers
 document.querySelectorAll(".severity-btn").forEach((btn) => {
     btn.addEventListener("click", function () {
@@ -245,8 +250,8 @@ const triggerPoints = {
     },
     'T17': {
         id: 'T17',
-        lat: 12.876394852947456,
-        lon: 74.84746210315357,
+        lat: 12.876439240548477,
+        lon: 74.84753736346088,
         controlsSignal: 'A6',
         road: 'NEW_ROAD',
         direction: 'NORTH',
@@ -319,7 +324,25 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
     const ambulanceId = `amb-${Date.now()}`;
     activeAmbulanceId = ambulanceId;
     
-    const ambulanceMarker = L.circleMarker([route.coordinates[0].lat, route.coordinates[0].lng], {
+    // Interpolate additional points between route coordinates
+    const interpolatedRoute = [];
+    for (let i = 0; i < route.coordinates.length - 1; i++) {
+        const start = route.coordinates[i];
+        const end = route.coordinates[i + 1];
+        
+        // Add 20 intermediate points between each pair of coordinates
+        for (let j = 0; j <= SIMUATION_STEPS; j++) {
+            const fraction = j / SIMUATION_STEPS;
+            interpolatedRoute.push({
+                lat: start.lat + (end.lat - start.lat) * fraction,
+                lng: start.lng + (end.lng - start.lng) * fraction
+            });
+        }
+    }
+    // Add the final point
+    interpolatedRoute.push(route.coordinates[route.coordinates.length - 1]);
+    
+    const ambulanceMarker = L.circleMarker([interpolatedRoute[0].lat, interpolatedRoute[0].lng], {
         radius: 12,
         fillColor: 'skyblue',
         fillOpacity: 1,
@@ -329,10 +352,10 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
     }).addTo(map);
 
     let currentPoint = 0;
-    let activeSignals = new Set(); // Track which signals are currently active
+    let activeSignals = new Set();
 
     const moveAmbulance = () => {
-        if (currentPoint >= route.coordinates.length) {
+        if (currentPoint >= interpolatedRoute.length) {
             console.log(`🏥 Ambulance ${ambulanceId} has reached ${hospitalName}`);
             map.removeLayer(ambulanceMarker);
             return;
@@ -342,7 +365,7 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
             console.log(`🚑 Ambulance ${ambulanceId} has started its journey to ${hospitalName}`);
         }
 
-        const coord = route.coordinates[currentPoint];
+        const coord = interpolatedRoute[currentPoint];
         ambulanceMarker.setLatLng([coord.lat, coord.lng]);
         
         // Check for nearby triggers
@@ -373,9 +396,9 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
             // Check if ambulance has crossed the traffic light
             if (activeSignals.has(trigger.controlsSignal)) {
                 // Calculate if ambulance has passed the signal
-                // Using a small buffer distance (0.02 km or 20 meters) after crossing
+                // Using a small buffer distance (0.01 km or 10 meters) after crossing
                 if (distanceToSignal > 0.01) {
-                    const prevCoord = route.coordinates[Math.max(0, currentPoint - 1)];
+                    const prevCoord = interpolatedRoute[Math.max(0, currentPoint - 1)];
                     const prevDistanceToSignal = haversine(
                         prevCoord.lat,
                         prevCoord.lng,
@@ -395,7 +418,7 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
         });
 
         currentPoint++;
-        setTimeout(moveAmbulance, 200);
+        setTimeout(moveAmbulance, SIMUATION_SPEED); // Reduced from 200ms to 50ms for smoother animation
     };
 
     moveAmbulance();
@@ -488,8 +511,8 @@ document.getElementById("ambulance-form").addEventListener("submit", function(e)
     additionalInfo = document.getElementById("additional-info").value;
 
     if (selectedSeverity && selectedEmergencyType) {
-        const startLat = 12.878879069412868; 
-        const startLon = 74.84107805041995;
+        const startLat = 12.876483446326933; 
+        const startLon = 74.84683733695195;
         
         map.setView([startLat, startLon], 13);
         initialize();
