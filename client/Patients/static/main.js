@@ -92,28 +92,28 @@ const trafficLights = {
 
 // Trigger Points Configuration
 const triggerPoints = {
-    'T1': {
+    'T1': {    
         id: 'T1',
-        lat: 12.885033,
-        lon: 74.838820,
+        lat: 12.88495654771792,
+        lon: 74.83885393383015,
         controlsSignal: 'A1',
         road: 'MG_ROAD',
         direction: 'NORTH',
         expectedHeading: 0
     },
-    'T2': {
+    'T2': {        
         id: 'T2',
-        lat: 12.886133,
-        lon: 74.838792,
+        lat: 12.88628966075962,
+        lon: 74.83874387433278,
         controlsSignal: 'B1',
         road: 'MG_ROAD',
         direction: 'SOUTH',
         expectedHeading: 180
     },
-    'T3': {
+    'T3': {       
         id: 'T3',
-        lat: 12.885420,
-        lon: 74.839394,
+        lat: 12.885438656220224,
+        lon: 74.83914941352691,
         controlsSignal: 'C1',
         road: 'BEJAI_ROAD',
         direction: 'WEST',
@@ -148,10 +148,10 @@ const triggerPoints = {
         direction: 'WEST',
         expectedHeading: 270
     },
-    'T7': {
+    'T7': {     
         id: 'T7',
-        lat: 12.885596901168265,
-        lon: 74.83976172468506,
+        lat: 12.885779240570491,
+        lon: 74.8406019732182,
         controlsSignal: 'A3',
         road: 'NEW_ROAD',
         direction: 'NORTH',
@@ -165,11 +165,11 @@ const triggerPoints = {
         road: 'NEW_ROAD',
         direction: 'SOUTH',
         expectedHeading: 180
-    },
-    'T9': {
+    }, 
+    'T9': {       
         id: 'T9',
-        lat: 12.885791435676284,
-        lon: 74.84267098197661,
+        lat: 12.885813717600039, 
+        lon: 74.8413382910157,
         controlsSignal: 'C3',
         road: 'NEW_ROAD',
         direction: 'WEST',
