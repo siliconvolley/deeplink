@@ -79,6 +79,7 @@ const trafficLights = {
     'A4': new TrafficLight('A4', 12.890729255496968, 74.85386350992287, "RED"),
     'B4': new TrafficLight('B4', 12.890658031652887, 74.8541383551607, "RED"),
     'C4': new TrafficLight('C4', 12.890773491171014, 74.85420243851222, "RED"),
+    'D4': new TrafficLight('D4', 12.890773491171014, 74.85420243851222, "RED"),
 
     'A5': new TrafficLight('A5', 12.883696286375436, 74.86384946423456, "RED"),
     'B5': new TrafficLight('B5', 12.88375934419841, 74.86354490566589, "RED"),
@@ -123,8 +124,10 @@ const triggerPoints = {
     // New trigger points
     'T4': {
         id: 'T4',
-        lat: 12.875899034095628,
-        lon: 74.84321953973553,
+        // lat: 12.875899034095628,
+        // lon: 74.84321953973553, 
+        lat: 12.875917166934594, 
+        lon : 74.84312540725419,
         controlsSignal: 'A2',
         road: 'NEW_ROAD',
         direction: 'NORTH',
@@ -141,8 +144,10 @@ const triggerPoints = {
     },
     'T6': {
         id: 'T6',
-        lat: 12.875405545613049,
-        lon: 74.8409668332341,
+        // lat: 12.875405545613049,
+        // lon: 74.8409668332341, 
+        lat : 12.875389798809515, 
+        lon : 74.840990935319,
         controlsSignal: 'C2',
         road: 'NEW_ROAD',
         direction: 'WEST',
@@ -483,8 +488,8 @@ document.getElementById("ambulance-form").addEventListener("submit", function(e)
     additionalInfo = document.getElementById("additional-info").value;
 
     if (selectedSeverity && selectedEmergencyType) {
-        const startLat = 12.893882508426671;
-        const startLon = 74.85879787465468;
+        const startLat = 12.878879069412868; 
+        const startLon = 74.84107805041995;
         
         map.setView([startLat, startLon], 13);
         initialize();
