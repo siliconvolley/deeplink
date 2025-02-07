@@ -22,3 +22,243 @@
 // ! B.C. Road
 // let currentLat = 12.878200;
 // let currentLon = 75.034000;
+
+
+// Traffic Light Instances
+// const trafficLights = {
+//     'A1': new TrafficLight('A1', 12.885420, 74.838777, "RED"),
+//     'B1': new TrafficLight('B1', 12.885809, 74.838835, "RED"),
+//     'C1': new TrafficLight('C1', 12.885393, 74.838986, "RED"),
+
+//     // New traffic signals
+//     'A2': new TrafficLight('A2', 12.87594583674387, 74.84202494151472, "RED"),
+//     'B2': new TrafficLight('B2', 12.876069726067968, 74.84198822807944, "RED"),
+//     'C2': new TrafficLight('C2', 12.875983696473902, 74.84187902052817, "RED"),
+
+//     'A3': new TrafficLight('A3', 12.885891470980964, 74.84113141764564, "RED"),
+//     'B3': new TrafficLight('B3', 12.885974060584818, 74.84129804006379, "RED"),
+//     'C3': new TrafficLight('C3', 12.88583332464578, 74.84129590569128, "RED"),
+
+//     'A4': new TrafficLight('A4', 12.890729255496968, 74.85386350992287, "RED"),
+//     'B4': new TrafficLight('B4', 12.890658031652887, 74.8541383551607, "RED"),
+//     'C4': new TrafficLight('C4', 12.890773491171014, 74.85420243851222, "RED"),
+//     'D4': new TrafficLight('D4', 12.890773491171014, 74.85420243851222, "RED"),
+
+//     'A5': new TrafficLight('A5', 12.883696286375436, 74.86384946423456, "RED"),
+//     'B5': new TrafficLight('B5', 12.88375934419841, 74.86354490566589, "RED"),
+//     'C5': new TrafficLight('C5', 12.884080324064884, 74.86376490517848, "RED"),
+//     'D5': new TrafficLight('D5', 12.883843212785768, 74.86395449821671, "RED"),
+
+//     'A6': new TrafficLight('A6', 12.876609263150268, 74.84785907004957, "RED"),
+//     'B6': new TrafficLight('B6', 12.876559582753755, 74.84795965287798, "RED"),
+//     'C6': new TrafficLight('C6', 12.876683021749818, 74.84810960713288, "RED")
+// };
+
+// // Trigger Points Configuration
+// const triggerPoints = {
+//     'T1': {    
+//         id: 'T1',
+//         lat: 12.88495654771792,
+//         lon: 74.83885393383015,
+//         controlsSignal: 'A1',
+//         road: 'MG_ROAD',
+//         direction: 'NORTH',
+//         expectedHeading: 0
+//     },
+//     'T2': {        
+//         id: 'T2',
+//         lat: 12.88628966075962,
+//         lon: 74.83874387433278,
+//         controlsSignal: 'B1',
+//         road: 'MG_ROAD',
+//         direction: 'SOUTH',
+//         expectedHeading: 180
+//     },
+//     'T3': {       
+//         id: 'T3',
+//         lat: 12.885438656220224,
+//         lon: 74.83914941352691,
+//         controlsSignal: 'C1',
+//         road: 'BEJAI_ROAD',
+//         direction: 'WEST',
+//         expectedHeading: 270
+//     },
+
+//     // New trigger points
+//     'T4': {
+//         id: 'T4',
+//         // lat: 12.875899034095628,
+//         // lon: 74.84321953973553, 
+//         lat: 12.875917166934594, 
+//         lon : 74.84312540725419,
+//         controlsSignal: 'A2',
+//         road: 'NEW_ROAD',
+//         direction: 'NORTH',
+//         expectedHeading: 0
+//     },
+//     'T5': {
+//         id: 'T5',
+//         lat: 12.87719298638698,
+//         lon: 74.84180183688376,
+//         controlsSignal: 'B2',
+//         road: 'NEW_ROAD',
+//         direction: 'SOUTH',
+//         expectedHeading: 180
+//     },
+//     'T6': {
+//         id: 'T6',
+//         // lat: 12.875405545613049,
+//         // lon: 74.8409668332341, 
+//         lat : 12.875389798809515, 
+//         lon : 74.840990935319,
+//         controlsSignal: 'C2',
+//         road: 'NEW_ROAD',
+//         direction: 'WEST',
+//         expectedHeading: 270
+//     },
+//     'T7': {     
+//         id: 'T7',
+//         lat: 12.885779240570491,
+//         lon: 74.8406019732182,
+//         controlsSignal: 'A3',
+//         road: 'NEW_ROAD',
+//         direction: 'NORTH',
+//         expectedHeading: 0
+//     },
+//     'T8': {
+//         id: 'T8',
+//         lat: 12.887278489781236,
+//         lon: 74.84156984659629,
+//         controlsSignal: 'B3',
+//         road: 'NEW_ROAD',
+//         direction: 'SOUTH',
+//         expectedHeading: 180
+//     }, 
+//     'T9': {       
+//         id: 'T9',
+//         lat: 12.885813717600039, 
+//         lon: 74.8413382910157,
+//         controlsSignal: 'C3',
+//         road: 'NEW_ROAD',
+//         direction: 'WEST',
+//         expectedHeading: 270
+//     },
+//     'T10': {
+//         id: 'T10',
+//         lat: 12.890236386714921,
+//         lon: 74.85319529392879,
+//         controlsSignal: 'A4',
+//         road: 'NEW_ROAD',
+//         direction: 'NORTH',
+//         expectedHeading: 0
+//     },
+//     'T11': {
+//         id: 'T11',
+//         lat: 12.890196574714347,
+//         lon: 74.85559378810629,
+//         controlsSignal: 'B4',
+//         road: 'NEW_ROAD',
+//         direction: 'SOUTH',
+//         expectedHeading: 180
+//     },
+//     'T12': {
+//         id: 'T12',
+//         lat: 12.891296474429344,
+//         lon: 74.85519562296714,
+//         controlsSignal: 'C4',
+//         road: 'NEW_ROAD',
+//         direction: 'WEST',
+//         expectedHeading: 270
+//     },
+//     'T13': {
+//         id: 'T13',
+//         lat: 12.882672034440871,
+//         lon: 74.86425713028501,
+//         controlsSignal: 'A5',
+//         road: 'NEW_ROAD',
+//         direction: 'NORTH',
+//         expectedHeading: 0
+//     },
+//     'T14': {
+//         id: 'T14',
+//         lat: 12.882375920681337,
+//         lon: 74.86323814948915,
+//         controlsSignal: 'B5',
+//         road: 'NEW_ROAD',
+//         direction: 'SOUTH',
+//         expectedHeading: 180
+//     },
+//     'T15': {
+//         id: 'T15',
+//         lat: 12.885499026826007,
+//         lon: 74.862842801463,
+//         controlsSignal: 'C5',
+//         road: 'NEW_ROAD',
+//         direction: 'WEST',
+//         expectedHeading: 270
+//     },
+//     'T16': {
+//         id: 'T16',
+//         lat: 12.884811657561222,
+//         lon: 74.86596543526811,
+//         controlsSignal: 'D5',
+//         road: 'NEW_ROAD',
+//         direction: 'SOUTH',
+//         expectedHeading: 180
+//     },
+//     'T17': {
+//         id: 'T17',
+//         lat: 12.876439240548477,
+//         lon: 74.84753736346088,
+//         controlsSignal: 'A6',
+//         road: 'NEW_ROAD',
+//         direction: 'NORTH',
+//         expectedHeading: 0
+//     },
+//     'T18': {
+//         id: 'T18',
+//         lat: 12.87604118039173,
+//         lon: 74.84816594064537,
+//         controlsSignal: 'B6',
+//         road: 'NEW_ROAD',
+//         direction: 'SOUTH',
+//         expectedHeading: 180
+//     },
+//     'T19': {
+//         id: 'T19',
+//         lat: 12.877103478436702,
+//         lon: 74.8487398383215,
+//         controlsSignal: 'C6',
+//         road: 'NEW_ROAD',
+//         direction: 'WEST',
+//         expectedHeading: 270
+//     }
+// };
+
+// // Junction Configuration
+// const junctionConfig = {
+//     'J1': {
+//         signals: ['A1', 'B1', 'C1'],
+//         triggers: ['T1', 'T2', 'T3']
+//     },
+//     'J2': {
+//         signals: ['A2', 'B2', 'C2'],
+//         triggers: ['T4', 'T5', 'T6']
+//     },
+//     'J3': {
+//         signals: ['A3', 'B3', 'C3'],
+//         triggers: ['T7', 'T8', 'T9']
+//     },
+//     'J4': {
+//         signals: ['A4', 'B4', 'C4'],
+//         triggers: ['T10', 'T11', 'T12']
+//     },
+//     'J5': {
+//         signals: ['A5', 'B5', 'C5', 'D5'],
+//         triggers: ['T13', 'T14', 'T15', 'T16']
+//     },
+//     'J6': {
+//         signals: ['A6', 'B6', 'C6'],
+//         triggers: ['T17', 'T18', 'T19']
+//     }
+// };
