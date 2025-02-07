@@ -80,6 +80,12 @@ input:focus {
 }
 
 /* Button styles */
+
+.landing-btn {
+  text-decoration: none;
+  color: white;
+}
+
 .button-group {
   display: flex;
   justify-content: space-between;

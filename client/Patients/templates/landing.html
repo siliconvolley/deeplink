@@ -10,8 +10,12 @@
     <div class="container">
         <h1>Emergency Medical System</h1>
         <div class="button-group">
-            <a href="{{ url_for('ambulance_page') }}" class="landing-btn">Ambulance Service</a>
-            <a href="{{ url_for('hospital_login') }}" class="landing-btn">Hospital Login</a>
+            <button class="landing-btn-group">
+                <a href="{{ url_for('ambulance_page') }}" class="landing-btn">Ambulance Service</a>
+            </button>
+            <button class="landing-btn-group">
+                <a href="{{ url_for('hospital_login') }}" class="landing-btn">Hospital Login</a>
+            </button>
         </div>
     </div>
 </body>
