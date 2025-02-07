@@ -17,6 +17,8 @@ let activeAmbulanceId = null;
 const SIMUATION_STEPS = 20; // Number of steps to interpolate between points (more steps = smoother animation)
 const SIMUATION_SPEED = 50; // milliseconds between each step (lower = faster)
 
+const startLat = 12.876483446326933; 
+const startLon = 74.84683733695195;
 
 // UI Event Handlers
 document.querySelectorAll(".severity-btn").forEach((btn) => {
@@ -511,8 +513,6 @@ document.getElementById("ambulance-form").addEventListener("submit", function(e)
     additionalInfo = document.getElementById("additional-info").value;
 
     if (selectedSeverity && selectedEmergencyType) {
-        const startLat = 12.876483446326933; 
-        const startLon = 74.84683733695195;
         
         map.setView([startLat, startLon], 13);
         initialize();
