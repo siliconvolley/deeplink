@@ -20,7 +20,10 @@ async function fetchPatients() {
         }
 
         const patients = await response.json();
-        console.log(patients);
+        
+        // Sort patients by timestamp in descending order (newest first)
+        patients.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
         const patientList = document.getElementById('patient-list');
         patientList.innerHTML = '';  // Clear any existing content
 
