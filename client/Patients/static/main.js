@@ -241,6 +241,7 @@ function showRoute(startLat, startLon, endLat, endLon, hospitalName, additionalI
 
 // Hospital Information Handling
 function displayHospitalInfo(hospitalName, severity, emergencyType, eta) {
+    document.getElementById("patient-id").textContent = `Patient ID: ${activeAmbulanceId}`;
     document.getElementById("hospital-info").style.display = "block";
     document.getElementById("hospital-name").textContent = `Hospital: ${hospitalName}`;
     document.getElementById("hospital-severity").textContent = `Severity: ${severity}`;
@@ -270,7 +271,7 @@ function sendEmergency(hospitalName, severity, emergencyType, eta, additionalInf
             emergencyType,
             eta,
             additionalInfo,
-            ambulanceId: activeAmbulanceId
+            "patient-id": additionalInfo // Add this line
         })
     }).catch(error => console.error("Error sending emergency data:", error));
 }

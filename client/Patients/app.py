@@ -122,7 +122,8 @@ def submit_patient():
         "severity": data['severity'],
         "emergencyType": data['emergencyType'],
         "eta": data['eta'],
-        "timestamp": current_timestamp 
+        "timestamp": current_timestamp,
+        "patient-id": data['patient-id']
     })
 
     return jsonify({"message": "Patient data submitted successfully!"}), 201

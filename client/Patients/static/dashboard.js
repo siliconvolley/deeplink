@@ -49,6 +49,7 @@ async function fetchPatients() {
 
                 patientDiv.innerHTML = `
                     <h3 class="${severityClass}">${patient.hospitalName}</h3>
+                    <p>Patient ID: ${patient['patient-id'] || 'N/A'}</p>
                     <p>Severity: ${patient.severity}</p>
                     <p>Emergency Type: ${patient.emergencyType}</p>
                     <p>ETA: ${patient.eta} minutes</p>
