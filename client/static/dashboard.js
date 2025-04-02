@@ -43,7 +43,7 @@ function updatePatientList(patients) {
   patientList.innerHTML = ""; // Clear any existing content
 
   if (patients.length === 0) {
-    patientList.innerHTML = "<p>No incoming patients.</p>";
+    patientList.innerHTML = "<p>No incoming patients 🚑</p>";
   } else {
     patients.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sort patients by timestamp in descending order
 

@@ -14,11 +14,11 @@ let additionalInfo = "";
 let activeAmbulanceId = null;
 
 // Simulation Parameters
-const SIMUATION_STEPS = 20; // Number of steps to interpolate between points (more steps = smoother animation)
-const SIMUATION_SPEED = 50; // milliseconds between each step (lower = faster)
+const SIMULATION_STEPS = 20; // Number of steps to interpolate between points (more steps = smoother animation)
+const SIMULATION_SPEED = 50; // milliseconds between each step (lower = faster)
 
-const startLat = 12.876483446326933;
-const startLon = 74.84683733695195;
+const startLat = 12.875877830329964;
+const startLon = 74.84810833846042;
 
 // UI Event Handlers
 document.querySelectorAll(".severity-btn").forEach((btn) => {
@@ -51,13 +51,22 @@ class TrafficLight {
     this.marker = null;
   }
 
-  updateStatus(newStatus) {
-    this.status = newStatus;
-    this.updateMarker();
-    // TODO: Add server communication
-    // if (this.status === "GREEN") {
-    //     sendSignalUpdate(this.id, true);
-    // }
+  async updateStatus(newStatus) {
+    try {
+      const response = await fetch(
+        `/api/traffic/update?light_id=${this.id}&new_status=${newStatus}`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update traffic light");
+
+      this.status = newStatus;
+      this.updateMarker();
+    } catch (error) {
+      console.error("Error updating traffic light:", error);
+    }
   }
 
   updateMarker() {
@@ -79,11 +88,25 @@ let triggerPoints = {};
 let junctionConfig = {};
 
 // Load configuration
-fetch("/static/traffic-config.json")
-  .then((response) => response.json())
-  .then((config) => {
-    // Create TrafficLight instances from config
-    Object.entries(config.trafficLights).forEach(([id, light]) => {
+async function loadTrafficConfig() {
+  try {
+    // First load config file
+    const configResponse = await fetch("/static/traffic-config.json");
+    const config = await configResponse.json();
+
+    // Initialize server with config
+    await fetch("/api/traffic/initialize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+
+    // Get initial state
+    const stateResponse = await fetch("/api/traffic/state");
+    const state = await stateResponse.json();
+
+    // Create TrafficLight instances
+    Object.entries(state.trafficLights).forEach(([id, light]) => {
       trafficLights[id] = new TrafficLight(
         light.id,
         light.lat,
@@ -92,13 +115,14 @@ fetch("/static/traffic-config.json")
       );
     });
 
-    // Store trigger points and junction config
-    triggerPoints = config.triggerPoints;
-    junctionConfig = config.junctionConfig;
+    triggerPoints = state.triggerPoints;
+    junctionConfig = state.junctionConfig;
 
     initialize();
-  })
-  .catch((error) => console.error("Error loading configuration:", error));
+  } catch (error) {
+    console.error("Error initializing traffic system:", error);
+  }
+}
 
 // System Initialization
 function initializeJunctions() {
@@ -126,8 +150,8 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
     const end = route.coordinates[i + 1];
 
     // Add 20 intermediate points between each pair of coordinates
-    for (let j = 0; j <= SIMUATION_STEPS; j++) {
-      const fraction = j / SIMUATION_STEPS;
+    for (let j = 0; j <= SIMULATION_STEPS; j++) {
+      const fraction = j / SIMULATION_STEPS;
       interpolatedRoute.push({
         lat: start.lat + (end.lat - start.lat) * fraction,
         lng: start.lng + (end.lng - start.lng) * fraction,
@@ -225,7 +249,7 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
     });
 
     currentPoint++;
-    setTimeout(moveAmbulance, SIMUATION_SPEED); // Reduced from 200ms to 50ms for smoother animation
+    setTimeout(moveAmbulance, SIMULATION_SPEED); // Reduced from 200ms to 50ms for smoother animation
   };
 
   moveAmbulance();
@@ -375,38 +399,29 @@ document
   });
 
 // Hospital Search Function
-function findNearestHospital(lat, lon, additionalInfo) {
-  const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];node[amenity=hospital](around:13000,${lat},${lon});out;`;
+async function findNearestHospital(lat, lon, additionalInfo) {
+  try {
+    const response = await fetch(`/api/nearest-hospital?lat=${lat}&lon=${lon}`);
 
-  fetch(overpassUrl)
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.elements.length > 0) {
-        let nearest = data.elements.reduce(
-          (closest, current) => {
-            const dist = haversine(lat, lon, current.lat, current.lon);
-            return dist < closest.distance
-              ? { distance: dist, hospital: current }
-              : closest;
-          },
-          { distance: Infinity, hospital: null }
-        );
+    if (!response.ok) {
+      throw new Error("Failed to find hospital");
+    }
 
-        if (nearest.hospital) {
-          showRoute(
-            lat,
-            lon,
-            nearest.hospital.lat,
-            nearest.hospital.lon,
-            nearest.hospital.tags.name || "Hospital",
-            additionalInfo
-          );
-        }
-      } else {
-        alert("No hospitals found within 5km");
-      }
-    })
-    .catch((error) => console.error("Hospital search error:", error));
+    const data = await response.json();
+    const hospital = data.hospital;
+
+    showRoute(
+      lat,
+      lon,
+      hospital.lat,
+      hospital.lon,
+      hospital.name,
+      additionalInfo
+    );
+  } catch (error) {
+    console.error("Hospital search error:", error);
+    alert("Failed to find nearby hospitals");
+  }
 }
 
 // Geographic Utilities
@@ -424,4 +439,4 @@ function haversine(lat1, lon1, lat2, lon2) {
 }
 
 // Start Application
-initialize();
+loadTrafficConfig();

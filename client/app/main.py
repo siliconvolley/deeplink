@@ -8,7 +8,10 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 import bcrypt
 import jwt
-from typing import Optional
+from typing import Optional, Dict, List, Literal, Any
+from math import radians, sin, cos, sqrt, atan2
+import httpx
+import json
 
 app = FastAPI()
 security = HTTPBearer()
@@ -47,6 +50,40 @@ class PatientData(BaseModel):
     additionalInfo: str | None = None
     patient_id: str | None = None
 
+class TrafficLightState(BaseModel):
+    id: str
+    lat: float
+    lon: float
+    status: Literal["RED", "GREEN"]
+
+class TriggerPoint(BaseModel):
+    id: str
+    lat: float
+    lon: float
+    controlsSignal: str
+    direction: str
+
+class JunctionConfig(BaseModel):
+    signals: List[str]
+    triggers: List[str]
+
+class RouteRequest(BaseModel):
+    start_lat: float
+    start_lon: float
+    end_lat: float
+    end_lon: float
+
+class RouteResponse(BaseModel):
+    coordinates: List[Dict[str, float]]
+    eta: int
+    distance: float
+    summary: Dict[str, Any]
+
+# Traffic Management State
+traffic_lights: Dict[str, TrafficLightState] = {}
+trigger_points: Dict[str, TriggerPoint] = {}
+junction_config: Dict[str, JunctionConfig] = {}
+
 # Authentication dependency
 async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
@@ -66,6 +103,21 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
             raise HTTPException(status_code=403, detail="Invalid token")
     except Exception as e:
         raise HTTPException(status_code=403, detail=str(e))
+
+# Utility functions
+def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate distance between two points on Earth"""
+    R = 6371  # Earth's radius in kilometers
+
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    
+    return R * c
 
 # Routes
 @app.get("/", response_class=HTMLResponse)
@@ -115,6 +167,39 @@ async def get_patients(payload: dict = Depends(verify_token)):
     
     return incoming_patients
 
+@app.get("/api/nearest-hospital")
+async def find_nearest_hospital(lat: float, lon: float):
+    """Find nearest hospital using Overpass API"""
+    overpass_url = f"https://overpass-api.de/api/interpreter?data=[out:json];node[amenity=hospital](around:13000,{lat},{lon});out;"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(overpass_url)
+            data = response.json()
+            
+            if not data["elements"]:
+                raise HTTPException(status_code=404, detail="No hospitals found within range")
+            
+            nearest = min(
+                data["elements"],
+                key=lambda hospital: haversine(
+                    lat, lon,
+                    hospital["lat"],
+                    hospital["lon"]
+                )
+            )
+            
+            return {
+                "hospital": {
+                    "name": nearest.get("tags", {}).get("name", "Unknown Hospital"),
+                    "lat": nearest["lat"],
+                    "lon": nearest["lon"]
+                }
+            }
+            
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/submit-patient")
 async def submit_patient(data: PatientData):
     current_timestamp = datetime.now().isoformat()
@@ -143,6 +228,64 @@ async def submit_patient(data: PatientData):
     
     return {"message": "Patient data submitted successfully!"}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+@app.post("/api/traffic/update")
+async def update_traffic_light(light_id: str, new_status: Literal["RED", "GREEN"]):
+    """Update traffic light status"""
+    if light_id not in traffic_lights:
+        raise HTTPException(status_code=404, detail="Traffic light not found")
+    
+    traffic_lights[light_id].status = new_status
+    return {"message": f"Traffic light {light_id} updated to {new_status}"}
+
+@app.get("/api/traffic/state")
+async def get_traffic_state():
+    """Get current state of all traffic lights"""
+    return {
+        "trafficLights": traffic_lights,
+        "triggerPoints": trigger_points,
+        "junctionConfig": junction_config
+    }
+
+@app.post("/api/traffic/initialize")
+async def initialize_traffic_system(config: Dict):
+    """Initialize traffic system with configuration"""
+    try:
+        # Clear existing state
+        traffic_lights.clear()
+        trigger_points.clear()
+        junction_config.clear()
+        
+        # Load new configuration
+        for id, light in config["trafficLights"].items():
+            traffic_lights[id] = TrafficLightState(**light)
+            
+        for id, trigger in config["triggerPoints"].items():
+            trigger_points[id] = TriggerPoint(**trigger)
+            
+        for id, junction in config["junctionConfig"].items():
+            junction_config[id] = JunctionConfig(**junction)
+            
+        return {"message": "Traffic system initialized successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.on_event("startup")
+async def startup_event():
+    try:
+        # Load initial configuration
+        with open("static/traffic-config.json") as f:
+            config = json.load(f)
+            
+        # Initialize traffic system
+        for id, light in config["trafficLights"].items():
+            traffic_lights[id] = TrafficLightState(**light)
+            
+        for id, trigger in config["triggerPoints"].items():
+            trigger_points[id] = TriggerPoint(**trigger)
+            
+        for id, junction in config["junctionConfig"].items():
+            junction_config[id] = JunctionConfig(**junction)
+            
+        print("Traffic system initialized successfully")
+    except Exception as e:
+        print(f"Error initializing traffic system: {e}")

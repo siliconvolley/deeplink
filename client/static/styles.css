@@ -1,7 +1,5 @@
 :root {
   --font-family: "Inter", system-ui, sans-serif;
-  --btn-primary: #262626;
-  --btn-primary-hover: #333333;
 }
 
 @layer reset {
@@ -75,6 +73,8 @@
 
   p {
     text-wrap: pretty;
+    text-align: center;
+    color: #ddd;
   }
 
   h1 {
@@ -328,15 +328,15 @@
   }
 
   .hospital-low {
-    color: #4caf50;
+    background-color: #4caf50;
   }
 
   .hospital-medium {
-    color: #ff9800;
+    background-color: #ff9800;
   }
 
   .hospital-high {
-    color: #f44336;
+    background-color: #f44336;
   }
 
   .message {
