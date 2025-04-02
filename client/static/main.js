@@ -1,6 +1,9 @@
 import { centralOrchestrator } from "./orchestrator.js";
 import { JunctionMaster } from "./junction.js";
 
+let ws = null;
+let ambulanceMarkers = {};
+
 // Map Initialization
 var map = L.map("map").setView([12.885809, 74.841689], 13);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -61,6 +64,16 @@ class TrafficLight {
       );
 
       if (!response.ok) throw new Error("Failed to update traffic light");
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: "signal_state",
+            signal_id: this.id,
+            state: newStatus,
+          })
+        );
+      }
 
       this.status = newStatus;
       this.updateMarker();
@@ -161,95 +174,35 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
   // Add the final point
   interpolatedRoute.push(route.coordinates[route.coordinates.length - 1]);
 
-  const ambulanceMarker = L.circleMarker(
-    [interpolatedRoute[0].lat, interpolatedRoute[0].lng],
-    {
-      radius: 12,
-      fillColor: "skyblue",
-      fillOpacity: 1,
-      color: "#000",
-      weight: 2,
-      zIndexOffset: 1000,
-    }
-  ).addTo(map);
-
   let currentPoint = 0;
   let activeSignals = new Set();
 
   const moveAmbulance = () => {
     if (currentPoint >= interpolatedRoute.length) {
       console.log(`🏥 Ambulance ${ambulanceId} has reached ${hospitalName}`);
-      map.removeLayer(ambulanceMarker);
+      if (ambulanceMarkers[ambulanceId]) {
+        map.removeLayer(ambulanceMarkers[ambulanceId]);
+        delete ambulanceMarkers[ambulanceId];
+      }
       return;
     }
 
-    if (currentPoint === 0) {
-      console.log(
-        `🚑 Ambulance ${ambulanceId} has started its journey to ${hospitalName}`
+    const coord = interpolatedRoute[currentPoint];
+
+    // Send position update through WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "ambulance_position",
+          ambulance_id: ambulanceId,
+          position: coord,
+        })
       );
     }
 
-    const coord = interpolatedRoute[currentPoint];
-    ambulanceMarker.setLatLng([coord.lat, coord.lng]);
-
-    // Check for nearby triggers
-    Object.values(triggerPoints).forEach((trigger) => {
-      const distanceToTrigger = haversine(
-        coord.lat,
-        coord.lng,
-        trigger.lat,
-        trigger.lon
-      );
-
-      const associatedSignal = trafficLights[trigger.controlsSignal];
-      const distanceToSignal = haversine(
-        coord.lat,
-        coord.lng,
-        associatedSignal.lat,
-        associatedSignal.lon
-      );
-
-      // If ambulance is within =10 meters of trigger point
-      if (
-        distanceToTrigger <= 0.01 &&
-        !activeSignals.has(trigger.controlsSignal)
-      ) {
-        console.log(
-          `🚦 Ambulance approaching signal ${trigger.controlsSignal}`
-        );
-        trafficLights[trigger.controlsSignal].updateStatus("GREEN");
-        activeSignals.add(trigger.controlsSignal);
-        console.log(`🟢 Signal ${trigger.controlsSignal} changed to GREEN`);
-      }
-
-      // Check if ambulance has crossed the traffic light
-      if (activeSignals.has(trigger.controlsSignal)) {
-        // Calculate if ambulance has passed the signal
-        // Using a small buffer distance (0.01 km or 10 meters) after crossing
-        if (distanceToSignal > 0.01) {
-          const prevCoord = interpolatedRoute[Math.max(0, currentPoint - 1)];
-          const prevDistanceToSignal = haversine(
-            prevCoord.lat,
-            prevCoord.lng,
-            associatedSignal.lat,
-            associatedSignal.lon
-          );
-
-          // If previous position was closer to signal than current position,
-          // it means we've crossed the signal
-          if (prevDistanceToSignal < distanceToSignal) {
-            trafficLights[trigger.controlsSignal].updateStatus("RED");
-            activeSignals.delete(trigger.controlsSignal);
-            console.log(
-              `🔴 Signal ${trigger.controlsSignal} changed to RED after ambulance passed`
-            );
-          }
-        }
-      }
-    });
-
+    updateAmbulanceOnMap(ambulanceId, coord);
     currentPoint++;
-    setTimeout(moveAmbulance, SIMULATION_SPEED); // Reduced from 200ms to 50ms for smoother animation
+    setTimeout(moveAmbulance, SIMULATION_SPEED);
   };
 
   moveAmbulance();
@@ -374,6 +327,101 @@ function addTriggerMarkers() {
   });
 }
 
+// WebSocket connection function
+async function connectToJunction(junctionId) {
+  updateConnectionStatus("connecting");
+
+  if (ws) {
+    ws.close();
+  }
+
+  ws = new WebSocket(`ws://localhost:8000/ws/${junctionId}`);
+
+  ws.onopen = function () {
+    updateConnectionStatus("connected");
+    console.log("Connected to junction:", junctionId);
+  };
+
+  ws.onmessage = function (event) {
+    const data = JSON.parse(event.data);
+    handleWebSocketMessage(data);
+  };
+
+  ws.onerror = function (error) {
+    console.error("WebSocket error:", error);
+    updateConnectionStatus("disconnected");
+  };
+
+  ws.onclose = function () {
+    console.log("WebSocket connection closed");
+    updateConnectionStatus("disconnected");
+    // Try to reconnect after 5 seconds
+    setTimeout(() => connectToJunction(junctionId), 5000);
+  };
+}
+
+// Add connection status management
+function updateConnectionStatus(status) {
+  const statusElement = document.getElementById("connection-status");
+  const statusText = document.getElementById("status-text");
+
+  statusElement.className = "connection-status";
+
+  switch (status) {
+    case "connected":
+      statusElement.classList.add("status-connected");
+      statusText.textContent = "Connected";
+      break;
+    case "disconnected":
+      statusElement.classList.add("status-disconnected");
+      statusText.textContent = "Disconnected - Retrying...";
+      break;
+    case "connecting":
+      statusElement.classList.add("status-connecting");
+      statusText.textContent = "Connecting...";
+      break;
+  }
+}
+
+// WebSocket message handler
+function handleWebSocketMessage(data) {
+  switch (data.type) {
+    case "ambulance_update":
+      updateAmbulanceOnMap(data.ambulance_id, data.position);
+      break;
+    case "signal_update":
+      updateTrafficLightState(data.signal_id, data.state);
+      break;
+  }
+}
+
+// Add this function after handleWebSocketMessage
+
+function updateTrafficLightState(signalId, state) {
+  if (trafficLights[signalId]) {
+    trafficLights[signalId].status = state;
+    trafficLights[signalId].updateMarker();
+  }
+}
+
+// Update ambulance movement function
+function updateAmbulanceOnMap(ambulanceId, position) {
+  if (!ambulanceMarkers[ambulanceId]) {
+    ambulanceMarkers[ambulanceId] = L.circleMarker(
+      [position.lat, position.lng],
+      {
+        radius: 12,
+        fillColor: ambulanceId === activeAmbulanceId ? "skyblue" : "orange",
+        fillOpacity: 1,
+        color: "#000",
+        weight: 2,
+      }
+    ).addTo(map);
+  } else {
+    ambulanceMarkers[ambulanceId].setLatLng([position.lat, position.lng]);
+  }
+}
+
 // Main Initialization
 function initialize() {
   initializeJunctions();
@@ -440,3 +488,28 @@ function haversine(lat1, lon1, lat2, lon2) {
 
 // Start Application
 loadTrafficConfig();
+
+// Initialize WebSocket connection when page loads
+document.addEventListener("DOMContentLoaded", () => {
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      fetch(
+        `/api/nearest-junction?lat=${position.coords.latitude}&lon=${position.coords.longitude}`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          connectToJunction(data.junctionId);
+        })
+        .catch((error) => {
+          console.error("Error finding nearest junction:", error);
+          // Fallback to default junction
+          connectToJunction("junction1");
+        });
+    },
+    (error) => {
+      console.error("Geolocation error:", error);
+      // Fallback to default junction
+      connectToJunction("junction1");
+    }
+  );
+});

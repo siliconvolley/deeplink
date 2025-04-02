@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi import FastAPI, Request, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,6 +12,7 @@ from typing import Optional, Dict, List, Literal, Any
 from math import radians, sin, cos, sqrt, atan2
 import httpx
 import json
+from .websocket_manager import JunctionRoomManager
 
 app = FastAPI()
 security = HTTPBearer()
@@ -289,3 +290,32 @@ async def startup_event():
         print("Traffic system initialized successfully")
     except Exception as e:
         print(f"Error initializing traffic system: {e}")
+
+# WebSocket functionality
+junction_manager = JunctionRoomManager()
+
+@app.websocket("/ws/{junction_id}")
+async def websocket_endpoint(websocket: WebSocket, junction_id: str):
+    await junction_manager.connect(websocket, junction_id)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            if data["type"] == "ambulance_position":
+                await junction_manager.update_ambulance_position(
+                    junction_id,
+                    data["ambulance_id"],
+                    data["position"]
+                )
+            elif data["type"] == "signal_state":
+                await junction_manager.update_signal_state(
+                    junction_id,
+                    data["signal_id"],
+                    data["state"]
+                )
+    except WebSocketDisconnect:
+        junction_manager.disconnect(websocket, junction_id)
+
+@app.get("/api/nearest-junction")
+async def get_nearest_junction(lat: float, lon: float):
+    """Find the nearest junction based on coordinates"""
+    return {"junctionId": junction_manager.get_nearest_junction(lat, lon)}

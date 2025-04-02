@@ -109,6 +109,7 @@ dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "pyjwt" },
     { name = "pymongo" },
+    { name = "websockets" },
 ]
 
 [package.metadata]
@@ -117,6 +118,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.11" },
     { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "pymongo", specifier = ">=4.11.3" },
+    { name = "websockets", specifier = ">=15.0.1" },
 ]
 
 [[package]]
