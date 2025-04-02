@@ -1,0 +1,347 @@
+:root {
+  --font-family: "Inter", system-ui, sans-serif;
+  --btn-primary: #262626;
+  --btn-primary-hover: #333333;
+}
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  ul,
+  ol,
+  figure {
+    margin: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 500;
+    text-wrap: balance;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+
+  img,
+  picture,
+  svg,
+  video {
+    max-width: 100%;
+    display: block;
+  }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-family);
+    line-height: 1.5;
+    color-scheme: light;
+  }
+
+  body {
+    background-color: #1c1c1c;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  h1 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 25px;
+    font-size: 28px;
+    font-weight: 600;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: #444;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: white;
+    font-size: 16px;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+  }
+
+  input::placeholder {
+    color: #bbb;
+  }
+
+  input:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+
+  button {
+    flex: 1;
+    padding: 12px 15px;
+    background-color: #004690;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+}
+
+@layer layouts {
+  .container {
+    width: 100%;
+    max-width: 850px;
+    padding: 20px;
+    margin: 20px;
+    background-color: #333;
+    border-radius: 10px;
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .container-dta {
+    width: 100%;
+    max-width: 800px;
+    padding: 30px;
+    background-color: #333;
+    border-radius: 12px;
+    box-shadow: 0px 6px 24px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 80vh;
+  }
+
+  @media (max-width: 768px) {
+    .button-group {
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    button {
+      font-size: 14px;
+    }
+
+    #map {
+      height: 350px;
+    }
+  }
+
+  button.submit-btn {
+    width: 100%;
+    background-color: #28a745;
+    color: white;
+    font-size: 18px;
+    padding: 14px 0;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    margin-top: 10px;
+  }
+
+  button.submit-btn:hover {
+    background-color: #218838;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  button:hover {
+    background-color: #007bff;
+  }
+
+  button.active {
+    background-color: #007bff;
+  }
+
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  button.low {
+    background-color: #007bff;
+  }
+
+  button.moderate {
+    background-color: #ffc107;
+  }
+
+  button.high {
+    background-color: #dc3545;
+  }
+
+  button.other {
+    background-color: #6c757d;
+  }
+
+  button#logout-button {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 0;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    margin-top: 10px;
+    width: 25%;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    max-height: 40px;
+  }
+
+  button#logout-button:hover {
+    background-color: #218838;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  #map {
+    width: 100%;
+    height: 450px;
+    margin-top: 20px;
+    border-radius: 8px;
+    border: 2px solid #444;
+  }
+
+  .hospital-info {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #444;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #fff;
+  }
+
+  .hospital-info h2 {
+    margin-bottom: 15px;
+    color: #fff;
+  }
+
+  .hospital-info p {
+    margin: 5px 0;
+    font-size: 15px;
+    color: #ddd;
+  }
+
+  .form-footer {
+    text-align: center;
+    color: #bbb;
+  }
+
+  .form-footer a {
+    color: #007bff;
+    text-decoration: none;
+  }
+
+  .form-footer a:hover {
+    text-decoration: underline;
+  }
+}
+
+@layer utilities {
+  .form-group,
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  .label {
+    display: block;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #ddd;
+  }
+
+  .landing-btn {
+    text-decoration: none;
+    color: white;
+  }
+
+  .button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  #patient-list {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-right: 10px;
+    margin-bottom: 20px;
+    max-height: calc(100% - 60px);
+  }
+
+  .patient-div {
+    margin-bottom: 15px;
+    padding: 20px;
+    background-color: #444;
+    border-radius: 8px;
+    color: white;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .patient-div h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: #ffcc00;
+  }
+
+  .patient-div p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #ccc;
+  }
+
+  .hospital-low {
+    color: #4caf50;
+  }
+
+  .hospital-medium {
+    color: #ff9800;
+  }
+
+  .hospital-high {
+    color: #f44336;
+  }
+
+  .message {
+    text-align: center;
+    color: #ff4d4d;
+    margin-bottom: 15px;
+  }
+}

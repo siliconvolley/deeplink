@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hospital Login</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', path='/favicon.ico') }}"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Hospital Login</h1>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="hospital-name" class="label">Hospital Name</label>
+          <input
+            type="text"
+            id="hospital-name"
+            name="hospital-name"
+            placeholder="Enter hospital name"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="password" class="label">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter password"
+            required
+          />
+        </div>
+        <button type="submit" class="submit-btn">Login</button>
+      </form>
+      <div id="error-message" class="message"></div>
+    </div>
+    <script src="{{ url_for('static', path='/login.js') }}"></script>
+  </body>
+</html>

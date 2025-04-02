@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ambulance Assistance System</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', path='/favicon.ico') }}"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Ambulance Assistance System</h1>
+
+      <form id="ambulance-form">
+        <div class="form-group">
+          <span class="label">Select Severity:</span>
+          <div class="button-group" id="severity-buttons">
+            <button type="button" class="severity-btn" data-severity="low">
+              Low
+            </button>
+            <button type="button" class="severity-btn" data-severity="moderate">
+              Moderate
+            </button>
+            <button type="button" class="severity-btn" data-severity="high">
+              High
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <span class="label">Select Emergency Type:</span>
+          <div class="button-group" id="emergency-buttons">
+            <button
+              type="button"
+              class="emergency-btn"
+              data-emergency="cardiac"
+            >
+              Cardiac Arrest
+            </button>
+            <button
+              type="button"
+              class="emergency-btn"
+              data-emergency="accident"
+            >
+              Accident
+            </button>
+            <button type="button" class="emergency-btn" data-emergency="fire">
+              Fire Emergency
+            </button>
+            <button type="button" class="emergency-btn" data-emergency="other">
+              Other
+            </button>
+          </div>
+        </div>
+
+        <!-- Add Additional Information Field -->
+        <div class="form-group">
+          <label for="additional-info" class="label">Patient ID:</label>
+          <input
+            type="text"
+            id="additional-info"
+            name="additionalInfo"
+            placeholder="Patient ID"
+          />
+        </div>
+
+        <button type="submit" class="submit-btn">Submit</button>
+      </form>
+
+      <div id="map"></div>
+
+      <div class="hospital-info" id="hospital-info" style="display: none">
+        <h2>Hospital Details</h2>
+        <p id="patient-id"></p>
+        <p id="hospital-name"></p>
+        <p id="hospital-severity"></p>
+        <p id="hospital-condition"></p>
+        <p id="hospital-eta"></p>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+    <script type="module" src="../static/main.js"></script>
+  </body>
+</html>
