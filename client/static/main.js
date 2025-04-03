@@ -1,9 +1,3 @@
-import { centralOrchestrator } from "./orchestrator.js";
-import { JunctionMaster } from "./junction.js";
-
-let ws = null;
-let ambulanceMarkers = {};
-
 // Map Initialization
 var map = L.map("map").setView([12.885809, 74.841689], 13);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -23,26 +17,22 @@ const SIMULATION_SPEED = 50; // milliseconds between each step (lower = faster)
 const startLat = 12.8872305370147;
 const startLon = 74.86198074564685;
 
-// UI Event Handlers
-document.querySelectorAll(".severity-btn").forEach((btn) => {
-  btn.addEventListener("click", function () {
-    document
-      .querySelectorAll(".severity-btn")
-      .forEach((b) => b.classList.remove("active"));
-    this.classList.add("active");
-    selectedSeverity = this.getAttribute("data-severity");
-  });
-});
+let ws = null;
+let ambulanceMarkers = {};
 
-document.querySelectorAll(".emergency-btn").forEach((btn) => {
-  btn.addEventListener("click", function () {
-    document
-      .querySelectorAll(".emergency-btn")
-      .forEach((b) => b.classList.remove("active"));
-    this.classList.add("active");
-    selectedEmergencyType = this.getAttribute("data-emergency");
-  });
-});
+// Haversine formula to calculate distance between two coordinates
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 // Traffic Light Class
 class TrafficLight {
@@ -120,30 +110,18 @@ async function loadTrafficConfig() {
     triggerPoints = state.triggerPoints;
     junctionConfig = state.junctionConfig;
 
-    initialize();
+    addTrafficLightMarkers();
+    addTriggerMarkers();
   } catch (error) {
     console.error("Error initializing traffic system:", error);
   }
-}
-
-// System Initialization
-function initializeJunctions() {
-  Object.entries(junctionConfig).forEach(([jId, config]) => {
-    const signals = config.signals.reduce((acc, id) => {
-      acc[id] = trafficLights[id];
-      return acc;
-    }, {});
-
-    const triggers = config.triggers.map((id) => triggerPoints[id]);
-    const junction = new JunctionMaster(jId, signals, triggers);
-    centralOrchestrator.registerJunction(junction);
-  });
 }
 
 // Routing and Emergency Handling
 function handleRouteFound(route, hospitalName, additionalInfo) {
   const ambulanceId = `amb-${Date.now()}`;
   activeAmbulanceId = ambulanceId;
+  const eta = Math.round(route.summary.totalTime / 60);
 
   // Interpolate additional points between route coordinates
   const interpolatedRoute = [];
@@ -276,13 +254,6 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
 
   moveAmbulance();
 
-  centralOrchestrator.handleEmergency(
-    ambulanceId,
-    { coordinates: route.coordinates },
-    selectedSeverity
-  );
-
-  const eta = Math.round(route.summary.totalTime / 60);
   displayHospitalInfo(
     hospitalName,
     selectedSeverity,
@@ -371,6 +342,10 @@ function sendEmergency(
 }
 
 // Map Utilities
+function addTrafficLightMarkers() {
+  Object.values(trafficLights).forEach((light) => light.updateMarker());
+}
+
 function addTriggerMarkers() {
   Object.values(triggerPoints).forEach((trigger) => {
     L.marker([trigger.lat, trigger.lon], {
@@ -490,30 +465,6 @@ function updateAmbulanceOnMap(ambulanceId, position) {
   }
 }
 
-// Main Initialization
-function initialize() {
-  initializeJunctions();
-  Object.values(trafficLights).forEach((light) => light.updateMarker());
-  addTriggerMarkers();
-}
-
-// Form Submission Handler
-document
-  .getElementById("ambulance-form")
-  .addEventListener("submit", function (e) {
-    e.preventDefault();
-    additionalInfo = document.getElementById("additional-info").value;
-
-    if (selectedSeverity && selectedEmergencyType) {
-      map.setView([startLat, startLon], 13);
-      initialize();
-      findNearestHospital(startLat, startLon, additionalInfo);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else {
-      alert("Please select both severity and emergency type");
-    }
-  });
-
 // Hospital Search Function
 async function findNearestHospital(lat, lon, additionalInfo) {
   try {
@@ -540,43 +491,47 @@ async function findNearestHospital(lat, lon, additionalInfo) {
   }
 }
 
-// Start Application
-loadTrafficConfig();
+// UI Event Handlers
+document.querySelectorAll(".severity-btn").forEach((btn) => {
+  btn.addEventListener("click", function () {
+    document
+      .querySelectorAll(".severity-btn")
+      .forEach((b) => b.classList.remove("active"));
+    this.classList.add("active");
+    selectedSeverity = this.getAttribute("data-severity");
+  });
+});
+
+document.querySelectorAll(".emergency-btn").forEach((btn) => {
+  btn.addEventListener("click", function () {
+    document
+      .querySelectorAll(".emergency-btn")
+      .forEach((b) => b.classList.remove("active"));
+    this.classList.add("active");
+    selectedEmergencyType = this.getAttribute("data-emergency");
+  });
+});
+
+// Form Submission Handler
+document
+  .getElementById("ambulance-form")
+  .addEventListener("submit", function (e) {
+    e.preventDefault();
+    additionalInfo = document.getElementById("additional-info").value;
+
+    if (selectedSeverity && selectedEmergencyType) {
+      map.setView([startLat, startLon], 13);
+      findNearestHospital(startLat, startLon, additionalInfo);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      alert("Please select both severity and emergency type");
+    }
+  });
 
 // Initialize WebSocket connection when page loads
 document.addEventListener("DOMContentLoaded", () => {
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      fetch(
-        `/api/nearest-junction?lat=${position.coords.latitude}&lon=${position.coords.longitude}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          connectToJunction(data.junctionId);
-        })
-        .catch((error) => {
-          console.error("Error finding nearest junction:", error);
-          // Fallback to default junction
-          connectToJunction("junction1");
-        });
-    },
-    (error) => {
-      console.error("Geolocation error:", error);
-      // Fallback to default junction
-      connectToJunction("junction1");
-    }
-  );
+  connectToJunction("junction1");
 });
 
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+// Start Application
+loadTrafficConfig();
