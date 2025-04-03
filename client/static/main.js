@@ -20,8 +20,8 @@ let activeAmbulanceId = null;
 const SIMULATION_STEPS = 20; // Number of steps to interpolate between points (more steps = smoother animation)
 const SIMULATION_SPEED = 50; // milliseconds between each step (lower = faster)
 
-const startLat = 12.875877830329964;
-const startLon = 74.84810833846042;
+const startLat = 12.8872305370147;
+const startLon = 74.86198074564685;
 
 // UI Event Handlers
 document.querySelectorAll(".severity-btn").forEach((btn) => {
@@ -103,17 +103,6 @@ let junctionConfig = {};
 // Load configuration
 async function loadTrafficConfig() {
   try {
-    // First load config file
-    const configResponse = await fetch("/static/traffic-config.json");
-    const config = await configResponse.json();
-
-    // Initialize server with config
-    await fetch("/api/traffic/initialize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(config),
-    });
-
     // Get initial state
     const stateResponse = await fetch("/api/traffic/state");
     const state = await stateResponse.json();
@@ -180,11 +169,35 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
   const moveAmbulance = () => {
     if (currentPoint >= interpolatedRoute.length) {
       console.log(`🏥 Ambulance ${ambulanceId} has reached ${hospitalName}`);
+
+      // Send final websocket message to notify server
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: "ambulance_complete",
+            ambulance_id: ambulanceId,
+          })
+        );
+      }
+
+      // Remove ambulance marker from map
       if (ambulanceMarkers[ambulanceId]) {
         map.removeLayer(ambulanceMarkers[ambulanceId]);
         delete ambulanceMarkers[ambulanceId];
       }
+
+      // Clear from active tracking
+      if (ambulanceId === activeAmbulanceId) {
+        activeAmbulanceId = null;
+      }
+
       return;
+    }
+
+    if (currentPoint === 0) {
+      console.log(
+        `🚑 Ambulance ${ambulanceId} has started its journey to ${hospitalName}`
+      );
     }
 
     const coord = interpolatedRoute[currentPoint];
@@ -201,6 +214,62 @@ function handleRouteFound(route, hospitalName, additionalInfo) {
     }
 
     updateAmbulanceOnMap(ambulanceId, coord);
+
+    // Check for nearby triggers
+    Object.values(triggerPoints).forEach((trigger) => {
+      const distanceToTrigger = haversine(
+        coord.lat,
+        coord.lng,
+        trigger.lat,
+        trigger.lon
+      );
+
+      const associatedSignal = trafficLights[trigger.controlsSignal];
+      const distanceToSignal = haversine(
+        coord.lat,
+        coord.lng,
+        associatedSignal.lat,
+        associatedSignal.lon
+      );
+
+      // If ambulance is within 10 meters of trigger point
+      if (
+        distanceToTrigger <= 0.01 &&
+        !activeSignals.has(trigger.controlsSignal)
+      ) {
+        console.log(
+          `🚦 Ambulance approaching signal ${trigger.controlsSignal}`
+        );
+        trafficLights[trigger.controlsSignal].updateStatus("GREEN");
+        activeSignals.add(trigger.controlsSignal);
+        console.log(`🟢 Signal ${trigger.controlsSignal} changed to GREEN`);
+      }
+
+      // Check if ambulance has crossed the traffic light
+      if (activeSignals.has(trigger.controlsSignal)) {
+        // Using a small buffer distance (0.01 km or 10 meters) after crossing
+        if (distanceToSignal > 0.01) {
+          const prevCoord = interpolatedRoute[Math.max(0, currentPoint - 1)];
+          const prevDistanceToSignal = haversine(
+            prevCoord.lat,
+            prevCoord.lng,
+            associatedSignal.lat,
+            associatedSignal.lon
+          );
+
+          // If previous position was closer to signal than current position,
+          // it means we've crossed the signal
+          if (prevDistanceToSignal < distanceToSignal) {
+            trafficLights[trigger.controlsSignal].updateStatus("RED");
+            activeSignals.delete(trigger.controlsSignal);
+            console.log(
+              `🔴 Signal ${trigger.controlsSignal} changed to RED after ambulance passed`
+            );
+          }
+        }
+      }
+    });
+
     currentPoint++;
     setTimeout(moveAmbulance, SIMULATION_SPEED);
   };
@@ -271,18 +340,6 @@ function displayHospitalInfo(hospitalName, severity, emergencyType, eta) {
   ).textContent = `Emergency: ${emergencyType}`;
   document.getElementById("hospital-eta").textContent = `ETA: ${eta} minutes`;
 }
-
-// TODO: Add server communication
-// function sendSignalUpdate(signalId, isGreen) {
-//     fetch("http://127.0.0.1:5001/traffic_signal", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//             isGreen: isGreen,
-//             signalNumber: signalId === 'A1' ? 1 : signalId === 'B1' ? 2 : 3
-//         })
-//     }).catch(error => console.error("Error sending signal update:", error));
-// }
 
 function sendEmergency(
   hospitalName,
@@ -392,6 +449,17 @@ function handleWebSocketMessage(data) {
     case "signal_update":
       updateTrafficLightState(data.signal_id, data.state);
       break;
+    case "ambulance_complete":
+      // Remove ambulance marker from all connected clients
+      if (ambulanceMarkers[data.ambulance_id]) {
+        map.removeLayer(ambulanceMarkers[data.ambulance_id]);
+        delete ambulanceMarkers[data.ambulance_id];
+      }
+      // Clear active tracking if it's the active ambulance
+      if (data.ambulance_id === activeAmbulanceId) {
+        activeAmbulanceId = null;
+      }
+      break;
   }
 }
 
@@ -472,20 +540,6 @@ async function findNearestHospital(lat, lon, additionalInfo) {
   }
 }
 
-// Geographic Utilities
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
 // Start Application
 loadTrafficConfig();
 
@@ -513,3 +567,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   );
 });
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}

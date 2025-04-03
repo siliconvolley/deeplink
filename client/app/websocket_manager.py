@@ -2,10 +2,12 @@ from fastapi import WebSocket
 from typing import Dict, Set, List
 import json
 
+
 class JunctionRoomManager:
     def __init__(self):
         self.active_connections: Dict[str, Set[WebSocket]] = {}
-        self.ambulance_positions: Dict[str, Dict] = {}  # Store ambulance positions
+        # Store ambulance positions
+        self.ambulance_positions: Dict[str, Dict] = {}
         self.junction_signals: Dict[str, Dict] = {}     # Store signal states
 
     async def connect(self, websocket: WebSocket, junction_id: str):
@@ -47,4 +49,16 @@ class JunctionRoomManager:
             "signal_id": signal_id,
             "state": state
         })
-        
+
+    async def remove_ambulance(self, ambulance_id: str):
+        """Remove ambulance from tracking when it reaches its destination"""
+        print(f"Removing ambulance {ambulance_id} from tracking")
+        if ambulance_id in self.ambulance_positions:
+            junction_id = self.ambulance_positions[ambulance_id]["junction_id"]
+            del self.ambulance_positions[ambulance_id]
+
+            # Notify all clients in the junction that ambulance has completed
+            await self.broadcast_to_junction(junction_id, {
+                "type": "ambulance_complete",
+                "ambulance_id": ambulance_id
+            })
